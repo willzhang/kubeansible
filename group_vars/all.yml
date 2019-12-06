@@ -16,6 +16,18 @@ INTERFACE_NAME: eth0
 HA_test_port: 22
 
 #breeze
+
+#docker
+wise2c_seed_host: wise2c-seed
+harbor: 172.16.5.25
+harbor_https: false
+format_hostname: true
+
+
+
+
+
+
 servers:
 - name: k8s
   port: 6443

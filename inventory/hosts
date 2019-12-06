@@ -23,3 +23,6 @@ node
 lb
 harbor
 etcd
+
+[test]
+172.16.5.21 hostname=breeze21

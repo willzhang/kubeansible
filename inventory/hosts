@@ -7,9 +7,19 @@
 172.16.5.35 hostname=node01
 172.16.5.36 hostname=node02
 
+[lb]
+
+[harbor]
+
+[etcd]
+
+
 [Master:children]
 master
 
 [Allnode:children]
 Master
 node
+lb
+harbor
+etcd

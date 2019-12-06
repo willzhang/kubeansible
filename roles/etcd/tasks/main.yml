@@ -1,0 +1,84 @@
+- name: make etcd dir
+  file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0755
+  with_items:
+    - '/var/tmp/etcd/'
+
+- name: make etcd cert dir
+  file:
+    path: '/etc/etcd/pki'
+    state: directory
+    mode: 0755
+  
+- name: copy cfssl script
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'file/download_cfssl.sh', dest: '/var/tmp/etcd/' }
+  run_once: true
+
+- name: download cfssl tool
+  shell: ./download_cfssl.sh
+  args:
+    chdir: '/var/tmp/etcd/'
+  run_once: true
+  
+- name: copy certificates JSON files
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'file/ca-csr.json', dest: '/var/tmp/etcd/' }
+  - { src: 'file/ca-config.json', dest: '/var/tmp/etcd/' }
+  - { src: 'file/etcd-csr.json', dest: '/var/tmp/etcd/' }
+  run_once: true
+
+- name: copy certificates generation scripts
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0755
+  with_items:
+  - { src: 'file/generate-etcd-certificates.sh', dest: '/var/tmp/etcd/' }
+  run_once: true
+
+- name: generate etcd certificates
+  raw: |
+    /var/tmp/etcd/generate-etcd-certificates.sh
+  run_once: true
+
+- name: fetch etcd certificates
+  fetch:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    flat: true
+  with_items:
+  - { src: '/etc/etcd/pki/ca.pem', dest: 'file/ca.pem' }
+  - { src: '/etc/etcd/pki/ca-key.pem', dest: 'file/ca-key.pem' }
+  - { src: '/etc/etcd/pki/etcd.pem', dest: 'file/etcd.pem' }
+  - { src: '/etc/etcd/pki/etcd-key.pem', dest: 'file/etcd-key.pem' }
+  run_once: true
+
+- name: copy certificates
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'file/ca.pem', dest: '/etc/etcd/pki/ca.pem' }
+  - { src: 'file/ca-key.pem', dest: '/etc/etcd/pki/ca-key.pem' }
+  - { src: 'file/etcd.pem', dest: '/etc/etcd/pki/etcd.pem' }
+  - { src: 'file/etcd-key.pem', dest: '/etc/etcd/pki/etcd-key.pem' }
+
+- name: run etcd
+  docker_container:
+    name: etcd
+    network_mode: host
+    restart_policy: unless-stopped
+    image: "{{ registry_endpoint }}/{{ registry_project }}/etcd-amd64:{{ version }}"
+    command: '{{ command }}'
+    volumes:
+      - "{{ etcd_data_path }}:/var/lib/etcd"
+      - "/etc/etcd/pki:/etcd-cert"

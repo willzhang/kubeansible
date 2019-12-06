@@ -1,0 +1,69 @@
+- include_tasks: centos.yml
+  when: ansible_os_family == "RedHat"
+
+
+- name: create the dir for docker
+  file: name={{ item }} state=directory
+  with_items:
+    - /etc/docker
+    - /etc/systemd/system/docker.service.d/
+
+- name: populate service facts
+  service_facts:
+
+- set_fact:
+    docker_Install_condition: |-
+      {%- if force | d(false) -%}true
+      {%- else -%}{{ not(service['docker.service'] | d(false)) }}
+      {%- endif %}
+  
+- name: Add the repo
+  get_url:
+    url: http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+    dest: /etc/yum.repos.d/docker-ce.repo 
+  become: yes
+
+- yum: name=yum-utils state=present update_cache=yes
+
+- name: get the info of the docker-ce
+  yum: list=docker-ce
+  register: temp_var
+
+- set_fact: 
+    docker_version={{ temp_var.results | map(attribute='version')| list | select('search', docker.version ) | list | last}}
+
+- name: Check if docker-ce-{{ docker_version }} is installed
+  yum: list=docker-ce-{{ docker_version }}
+  register: pkg
+
+- name: Install docker-ce-{{ docker_version }}
+  yum:
+    name: docker-ce-{{ docker_version }}
+  when: pkg.results | selectattr("yumstate", "match", "installed") | list | length == 0
+        
+- name: distribute docker config
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'daemon.json.j2', dest: '/etc/docker/daemon.json' }
+  notify:
+    - restart docker
+
+- name: reload & restart docker
+  systemd:
+    name: docker
+    daemon_reload: true
+    enabled: true
+    state: restarted
+
+- name: set sysctl
+  sysctl:
+    name: '{{ item }}'
+    value: 1
+    state: present
+    reload: true
+  with_items:
+  - net.ipv4.ip_forward
+  - net.bridge.bridge-nf-call-iptables
+  - net.bridge.bridge-nf-call-ip6tables

@@ -1,0 +1,15 @@
+[master]
+172.16.5.32 hostname=master01
+172.16.5.33 hostname=master02
+172.16.5.34 hostname=master03
+
+[node]
+172.16.5.35 hostname=node01
+172.16.5.36 hostname=node02
+
+[Master:children]
+master
+
+[Allnode:children]
+Master
+node

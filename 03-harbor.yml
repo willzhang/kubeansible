@@ -1,0 +1,5 @@
+---
+- hosts: harbor
+  gather_facts: no
+  roles:
+    - harbor

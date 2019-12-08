@@ -1,0 +1,18 @@
+- block:
+  - name: stop and rm old etcd container
+    docker_container:
+      name: etcd
+      state: absent
+  
+  - name: clean etcd directory
+    file:
+      path: '{{ item }}'
+      state: absent
+    with_items:
+      - "{{ etcd_data_path }}"
+  
+  - name: clean etcd cert directory
+    file:
+      path: '/etc/etcd/pki'
+      state: absent
+  when: "inventory_hostname in groups['etcd']"

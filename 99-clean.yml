@@ -1,0 +1,10 @@
+- hosts: allnodes
+  vars:
+    CLEAN_KUBERNETES: "yes"
+    CLEAN_ETCD: "no"
+    CLEAN_LB: "no" 
+    CLEAN_HARBOR: "no"
+    CLEAN_DOCKER: "no"
+    CLEAN_AUTH: "no"
+  roles:
+  - clean

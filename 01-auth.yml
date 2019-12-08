@@ -1,0 +1,5 @@
+---
+- hosts: allnodes
+  gather_facts: no
+  roles:
+    - auth

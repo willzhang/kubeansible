@@ -1,4 +1,0 @@
----
-- hosts: "test"
-  tasks:
-    - debug: var=vars

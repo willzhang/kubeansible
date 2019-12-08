@@ -1,0 +1,5 @@
+FROM busybox
+COPY get_package.sh .
+RUN sh get_pakcage.sh
+
+WORKSPACE /workspace

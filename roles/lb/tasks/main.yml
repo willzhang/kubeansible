@@ -1,0 +1,109 @@
+- name: make lb dir
+  file:
+    path: /var/lib/kubeansible/loadbalancer
+    state: directory
+    mode: 0755
+
+- name: generate lb config
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: 'templates/haproxy.cfg.j2', dest: '/var/lib/kubeansible/loadbalancer/haproxy.cfg' }
+    - { src: 'templates/keepalive.cfg.j2', dest: '/var/lib/kubeansible/loadbalancer/keepalive.cfg' }
+
+- name: copy lb images
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: '{{ base_dir }}/haproxy-{{ haproxy_version }}.tar.bz2', dest: '/var/lib/kubeansible/loadbalancer/' }
+    - { src: '{{ base_dir }}/keepalived-{{ keepalived_version }}.tar.bz2', dest: '/var/lib/kubeansible/loadbalancer/' }
+  run_once: true
+
+- name: copy keepalived script
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+    - { src: 'file/keepalived.sh', dest: '/var/lib/kubeansible/loadbalancer/' }
+
+- name: load lb image
+  docker_image:
+    load_path: '/var/lib/kubeansible/loadbalancer/{{ item }}'
+    name: lb
+    timeout: 600
+  with_items:
+    - haproxy-{{ haproxy_version }}.tar.bz2
+    - keepalived-{{ keepalived_version }}.tar.bz2
+  run_once: true
+
+- name: docker login
+  docker_login:
+    registry: '{{ registry_endpoint }}'
+    username: '{{ registry_user }}'
+    password: '{{ registry_password }}'
+    reauthorize: true
+  run_once: true
+
+- name: tag images
+  docker_image:
+    name: '{{ item.repo }}/{{ item.name }}'
+    repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
+    tag: '{{ item.tag }}'
+  with_items:
+    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
+    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
+  run_once: true
+
+- name: push images
+  docker_image:
+    name: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
+    tag: '{{ item.tag }}'
+    push: true
+    state: present
+  with_items:
+    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
+    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
+  run_once: true
+
+- name: remove original images tag
+  docker_image:
+    state: absent
+    name: '{{ item.repo }}/{{ item.name }}'
+    tag: '{{ item.tag }}'
+  with_items:
+    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
+    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
+  run_once: ture
+
+- name: get port
+  set_fact:
+    ports: |
+      {% set ports = ports | d([]) + ['{0}:{1}'.format(item.target, item.port + 1)] %}
+      {{ ports | list }}
+  with_items:
+  - "{{ servers | d([], true) | list }}"
+  run_once: true
+
+- name: run haproxy
+  docker_container:
+    name: haproxy
+    restart_policy: unless-stopped
+    image: "{{ registry_endpoint }}/{{ registry_project }}/k8s-haproxy:{{ haproxy_version  }}"
+    ports: '{{ ports | d([], true) | list }}'
+    volumes:
+    - '/var/lib/kubeansible/loadbalancer/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
+
+- name: run keepalived
+  docker_container:
+    name: keepalived
+    network_mode: host
+    restart_policy: unless-stopped
+    capabilities: NET_ADMIN
+    image: "{{ registry_endpoint }}/{{ registry_project }}/k8s-keepalived:{{ keepalived_version }}"
+    entrypoint: /bin/bash
+    command: /usr/bin/keepalived.sh
+    volumes:
+    - '/var/lib/kubeansible/loadbalancer/keepalive.cfg:/etc/keepalived/keepalived.conf'
+    - '/var/lib/kubeansible/loadbalancer/keepalived.sh:/usr/bin/keepalived.sh'

@@ -1,0 +1,21 @@
+- name: stop and rm harbor
+  shell: docker-compose stop && docker-compose rm -f
+  args:
+    chdir: '/var/lib/kubeansible/harbor'
+  when: "inventory_hostname in groups['harbor']"
+
+- name: clean harbor directory
+  file:
+    path: '{{ item }}'
+    state: absent
+  with_items:
+  - /data/registry
+  - /data/database
+  - /data/ca_download
+  - /data/config
+  - /data/job_logs
+  - /data/psc
+  - /data/secretkey
+  - /data/redis
+  - /var/lib/kubeansible/harbor
+  when: "inventory_hostname in groups['harbor']"

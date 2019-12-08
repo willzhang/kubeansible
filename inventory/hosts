@@ -1,28 +1,27 @@
 [master]
-172.16.5.32 hostname=master01
-172.16.5.33 hostname=master02
-172.16.5.34 hostname=master03
+172.16.40.12 hostname=master01
+172.16.40.13 hostname=master02
+172.16.40.14 hostname=master03
 
 [node]
-172.16.5.35 hostname=node01
-172.16.5.36 hostname=node02
+172.16.40.15 hostname=node01
 
 [lb]
+172.16.40.12 hostname=master01
+172.16.40.13 hostname=master02
+172.16.40.14 hostname=master03
 
 [harbor]
+172.16.40.16 hostname=harbor
 
 [etcd]
+172.16.40.12 hostname=master01
+172.16.40.13 hostname=master02
+172.16.40.14 hostname=master03
 
-
-[Master:children]
-master
-
-[Allnode:children]
-Master
-node
-lb
-harbor
-etcd
-
-[test]
-172.16.5.21 hostname=breeze21
+[allnodes]
+172.16.40.12 ansible_ssh_user="root" ansible_ssh_pass=123456
+172.16.40.13 ansible_ssh_user="root" ansible_ssh_pass=123456
+172.16.40.14 ansible_ssh_user="root" ansible_ssh_pass=123456
+172.16.40.15 ansible_ssh_user="root" ansible_ssh_pass=123456
+172.16.40.16 ansible_ssh_user="root" ansible_ssh_pass=123456

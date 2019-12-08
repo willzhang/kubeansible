@@ -1,5 +1,0 @@
-- hosts: master
-  gather_facts: yes
-  roles:
-    - { role: ha, tags: ha, when: "groups['master'] | length  > 1" }
-

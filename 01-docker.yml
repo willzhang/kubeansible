@@ -1,5 +1,0 @@
----
-- hosts: "{{ run | default('Allnode')}}"
-  gather_facts: yes
-  roles:
-    - docker

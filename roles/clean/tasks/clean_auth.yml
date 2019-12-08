@@ -1,0 +1,5 @@
+- name: clear auth
+  shell: |
+    sed -i '/{{ inventory_hostname }}[] ,]/d' /root/.ssh/known_hosts
+  connection: local
+  when: "inventory_hostname in groups['allnodes']"

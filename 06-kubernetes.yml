@@ -1,0 +1,6 @@
+- hosts: 
+    - master
+    - node
+  gather_facts: yes
+  roles:
+    - kubernetes

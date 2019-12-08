@@ -1,0 +1,33 @@
+- name: make script dir
+  file:
+    path: '{{ item }}'
+    state: directory
+  with_items:
+  - /var/lib/kubeansible/auth
+  connection: local
+  run_once: true
+
+- name: distribute the script to host
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0755
+  with_items:
+    - { src: 'file/gen-rsa.sh', dest: '/var/lib/kubeansible/auth' }
+    - { src: 'file/get-public-key.sh', dest: '/var/lib/kubeansible/auth' }
+  connection: local
+  run_once: true
+
+- name: generate rsa and rsa.pub
+  shell: /var/lib/kubeansible/auth/gen-rsa.sh
+  connection: local
+  run_once: true
+
+- name: get public key
+  shell: /var/lib/kubeansible/auth/get-public-key.sh {{ inventory_hostname }}
+  connection: local
+
+- name: install ssh key
+  authorized_key: user=root
+                  key="{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+                  state=present

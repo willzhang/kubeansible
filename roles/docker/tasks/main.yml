@@ -34,5 +34,5 @@
   register: check_output
 
 - name: setup docker on all nodes
-  include_tasks: docker.yaml
+  include_tasks: docker.yml
   when: check_output.stdout != 'true'

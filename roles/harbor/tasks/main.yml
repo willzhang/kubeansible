@@ -1,0 +1,32 @@
+- name: make harbor dir
+  file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0755
+  with_items:
+  - /var/lib/kubeansible
+
+- name: unarchive harbor
+  unarchive:
+    src: '{{ base_dir }}/harbor-offline-installer-{{ version }}.tgz'
+    dest: '/var/lib/kubeansible/'
+
+- name: generate harbor config
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'templates/harbor.yml.j2', dest: '/var/lib/kubeansible/harbor/harbor.yml' }
+
+- name: install docker-compose
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    mode: 0755
+  with_items:
+  - { src: '{{ base_dir }}/bin/docker-compose', dest: '/usr/bin/docker-compose' }
+
+- name: launch harbor
+  shell: ./install.sh --with-clair --with-chartmuseum
+  args:
+    chdir: '/var/lib/kubeansible/harbor'

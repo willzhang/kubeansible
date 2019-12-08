@@ -1,0 +1,18 @@
+# 
+- import_tasks: clean_auth.yml
+  when: 'CLEAN_AUTH == "yes"'
+
+- import_tasks: clean_docker.yml
+  when: 'CLEAN_DOCKER == "yes"'
+
+- import_tasks: clean_harbor.yml
+  when: 'CLEAN_HARBOR == "yes"'
+
+- import_tasks: clean_lb.yml
+  when: 'CLEAN_LB == "yes"'
+
+- import_tasks: clean_etcd.yml
+  when: 'CLEAN_ETCD == "yes"'
+
+- import_tasks: clean_kubernetes.yml
+  when: 'CLEAN_KUBERNETES == "yes"'

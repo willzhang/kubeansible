@@ -1,1 +1,2 @@
-version: v1.9.3
+PKG_PATH=/workspace/packages/harbor
+DPATH=/var/lib/kubeansible

@@ -1,6 +1,6 @@
 - name: make lb dir
   file:
-    path: /var/lib/kubeansible/loadbalancer
+    path: {{ DPATH_PATH }}
     state: directory
     mode: 0755
 
@@ -9,16 +9,16 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-    - { src: 'templates/haproxy.cfg.j2', dest: '/var/lib/kubeansible/loadbalancer/haproxy.cfg' }
-    - { src: 'templates/keepalive.cfg.j2', dest: '/var/lib/kubeansible/loadbalancer/keepalive.cfg' }
+    - { src: 'templates/haproxy.cfg.j2', dest: '{{ DPATH_PATH }}/haproxy.cfg' }
+    - { src: 'templates/keepalive.cfg.j2', dest: '{{ DPATH_PATH }}/keepalive.cfg' }
 
 - name: copy lb images
   copy:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-    - { src: '{{ base_dir }}/haproxy-{{ haproxy_version }}.tar.bz2', dest: '/var/lib/kubeansible/loadbalancer/' }
-    - { src: '{{ base_dir }}/keepalived-{{ keepalived_version }}.tar.bz2', dest: '/var/lib/kubeansible/loadbalancer/' }
+    - { src: '{{ PKG_PATH }}/haproxy-{{ haproxy_version }}.tar.bz2', dest: '{{ DPATH_PATH }}/' }
+    - { src: '{{ PKG_PATH }}/keepalived-{{ keepalived_version }}.tar.bz2', dest: '{{ DPATH_PATH }}/' }
   run_once: true
 
 - name: copy keepalived script
@@ -26,11 +26,11 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-    - { src: 'file/keepalived.sh', dest: '/var/lib/kubeansible/loadbalancer/' }
+    - { src: 'file/keepalived.sh', dest: '{{  DPATH_PATH  }}/' }
 
 - name: load lb image
   docker_image:
-    load_path: '/var/lib/kubeansible/loadbalancer/{{ item }}'
+    load_path: '{{  DPATH_PATH  }}/{{ item }}'
     name: lb
     timeout: 600
   with_items:
@@ -93,7 +93,7 @@
     image: "{{ registry_endpoint }}/{{ registry_project }}/k8s-haproxy:{{ haproxy_version  }}"
     ports: '{{ ports | d([], true) | list }}'
     volumes:
-    - '/var/lib/kubeansible/loadbalancer/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
+    - '{{  DPATH_PATH  }}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
 
 - name: run keepalived
   docker_container:
@@ -105,5 +105,5 @@
     entrypoint: /bin/bash
     command: /usr/bin/keepalived.sh
     volumes:
-    - '/var/lib/kubeansible/loadbalancer/keepalive.cfg:/etc/keepalived/keepalived.conf'
-    - '/var/lib/kubeansible/loadbalancer/keepalived.sh:/usr/bin/keepalived.sh'
+    - '{{  DPATH_PATH  }}/keepalive.cfg:/etc/keepalived/keepalived.conf'
+    - '{{  DPATH_PATH  }}/keepalived.sh:/usr/bin/keepalived.sh'

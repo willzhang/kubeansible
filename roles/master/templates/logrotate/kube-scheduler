@@ -1,9 +1,0 @@
-{{ scheduler.logrotate.logDir }}/kube-scheduler.*.log.* {
-    olddir {{ scheduler.logrotate.logDir }}/logrotate
-    rotate {{ scheduler.logrotate.logRotate }}
-    size {{ scheduler.logrotate.logSize }}
-    missingok
-    compress
-    nodelaycompress
-    copytruncate
-}

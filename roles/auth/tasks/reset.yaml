@@ -1,4 +1,0 @@
-- name: clear target host
-  shell: |
-    sed -i '/{{ inventory_hostname }}[] ,]/d' /root/.ssh/known_hosts
-  connection: local

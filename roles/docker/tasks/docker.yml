@@ -3,26 +3,26 @@
     name: '{{ hostname }}'
   when: format_hostname
 
-- name: distribute wise2c apt source for Ubuntu 16 hosts
+- name: distribute kubeansible apt source for Ubuntu 16 hosts
   template:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/wise2c.list-ubuntu16.j2', dest: '/etc/apt/sources.list.d/wise2c.list' }
+  - { src: 'templates/kubeansible.list-ubuntu16.j2', dest: '/etc/apt/sources.list.d/kubeansible.list' }
   when: ansible_distribution =="Ubuntu" and ansible_distribution_major_version == "16"
 
-- name: distribute wise2c apt source for Ubuntu 18 hosts
+- name: distribute kubeansible apt source for Ubuntu 18 hosts
   template:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/wise2c.list-ubuntu18.j2', dest: '/etc/apt/sources.list.d/wise2c.list' }
+  - { src: 'templates/kubeansible.list-ubuntu18.j2', dest: '/etc/apt/sources.list.d/kubeansible.list' }
   when: ansible_distribution =="Ubuntu" and ansible_distribution_major_version == "18"
 
 - name: install python2 for Ubuntu
   shell: |
     mv /etc/apt/sources.list /etc/apt/sources.list.bak
-    curl -so /tmp/breeze.pub http://wise2c-seed:2008/debs/ubuntu18/breeze.pub
+    curl -so /tmp/breeze.pub http://kubeansible-seed:2008/debs/ubuntu18/breeze.pub
     apt-key add /tmp/breeze.pub
     rm -f /tmp/breeze.pub
     apt-get update
@@ -49,12 +49,12 @@
     firewall-cmd --complete-reload
   when: (ansible_distribution =="RedHat") or (ansible_distribution =="CentOS")
 
-- name: distribute wise2c yum repo
+- name: distribute kubeansible yum repo
   template:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/wise2c.repo.j2', dest: '/etc/yum.repos.d/wise2c.repo' }
+  - { src: 'templates/kubeansible.repo.j2', dest: '/etc/yum.repos.d/kubeansible.repo' }
   when: (ansible_distribution =="RedHat") or (ansible_distribution =="CentOS")
 
 - name: distribute ipvs bootload file
@@ -72,7 +72,7 @@
 - name: yum install docker
   yum:
     disablerepo: '*'
-    enablerepo: wise2c
+    enablerepo: kubeansible
     update_cache: true
     state: present
     name: '{{ item }}'
@@ -235,4 +235,4 @@
 
 - name: Fix the warning message "No swap limit support" with docker on Ubuntu
   script: scripts/fix-ubuntu-docker-warning.sh
-  when: ansible_distribution =="Ubuntu"                     
+  when: ansible_distribution =="Ubuntu"

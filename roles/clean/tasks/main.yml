@@ -9,7 +9,7 @@
   when: 'CLEAN_HARBOR == "yes"'
 
 - import_tasks: clean_loadbalancer.yml
-  when: 'CLEAN_LB == "yes"'
+  when: 'CLEAN_LOADBALANCER == "yes"'
 
 - import_tasks: clean_etcd.yml
   when: 'CLEAN_ETCD == "yes"'

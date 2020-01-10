@@ -1,5 +1,9 @@
-ARGS kubernetes_version=v1.16.3
+ARGS kubernetes_version=v1.17.0
+
 FROM willdockerhub/kubepackage:${kubernetes_version} as builder
+
 FROM cytopia/ansible:latest-tools
-COPY ./* /workspace
-COPY FROM builder:/workspace/packages /workspace
+
+RUN git clone https://github.com/willzhang/kubeansible.git
+
+COPY FROM builder:/data/packages .

@@ -1,5 +1,5 @@
 ---
-- hosts: harbor
+- hosts: registry
   gather_facts: no
   roles:
     - harbor

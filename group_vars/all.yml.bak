@@ -1,0 +1,8 @@
+base_dir: /data/packages
+dpath: /var/lib/kubeansible
+
+docker_version: 18.09.9
+#insecure_registry: "127.0.0.1/8"
+enable_mirror_registry: true
+#reg_mirrors: "https://dockerhub.azk8s.cn"
+#lb_kube_apiserver_port: "8443"

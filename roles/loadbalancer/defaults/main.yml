@@ -1,2 +1,6 @@
-PKG_PATH=/workspace/packages/loadbalancer
-DPATH=/var/lib/kubeansible/loadbalancer
+haproxy_version: 2.1.0-alpine
+registry_endpoint: 172.16.40.16
+registry_user: admin
+registry_password: Harbor12345
+registry_project: library
+lb_kube_apiserver_port: '8443'

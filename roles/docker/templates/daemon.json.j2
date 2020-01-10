@@ -7,8 +7,10 @@
     "max-size": "100m",
     "max-file": "5"
   },
+{% if enable_insecure_registry %}
   "insecure-registries": [
-      "{{ harbor }}"
+      "{{ insecure_registry }}"
   ],
+{% endif %}
   "storage-driver": "overlay2"
 }

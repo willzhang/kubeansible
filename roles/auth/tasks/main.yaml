@@ -11,8 +11,8 @@
     dest: '{{ item.dest }}'
     mode: 0755
   with_items:
-    - { src: 'file/gen-rsa.sh', dest: '{{ DPATH }}' }
-    - { src: 'file/get-public-key.sh', dest: '{{ DPATH }}' }
+    - { src: 'gen-rsa.sh', dest: '{{ DPATH }}' }
+    - { src: 'get-public-key.sh', dest: '{{ DPATH }}' }
   connection: local
   run_once: true
 

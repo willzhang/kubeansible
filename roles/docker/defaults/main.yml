@@ -1,1 +1,9 @@
-kubeansible_seed_host: repository
+#是否修改主机名
+format_hostname: true
+
+#是否添加insecure_registry参数
+enable_insecure_registry: true
+insecure_registry: 172.16.40.16
+
+#yum服务器别名
+kubeansible_seed_host: kubeansible

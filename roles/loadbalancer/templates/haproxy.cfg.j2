@@ -32,22 +32,19 @@ frontend stats-front
   mode http
   default_backend stats-back
 
-{% for s in servers | d([], true) | list %}
-frontend {{ s.name }}
-  bind *:{{ s.port + 1 }}
+frontend k8s
+  bind *:6443
   mode tcp
   tcp-request inspect-delay 5s
   #tcp-request content reject if !HTTP
   tcp-request content accept if { req.ssl_hello_type 1 }
-  default_backend {{ s.name }}
+  default_backend k8s
 
-backend {{ s.name }}
+backend k8s
   mode tcp
   option tcp-check
   balance roundrobin
   default-server inter 10s downinter 5s rise 2 fall 2 slowstart 60s maxconn 250 maxqueue 256 weight 100
-  {% for ip in s.ips %}
-  server {{ s.name }}{{ loop.index }} {{ ip }}:{{ s.port }} check
-  {% endfor %}
-
+{% for host in groups['master'] %}
+  server {{ hostvars[host].inventory_hostname }} {{ hostvars[host].ansible_ssh_host }}:6443 check inter 10s fall 2 rise 2 weight 1
 {% endfor %}

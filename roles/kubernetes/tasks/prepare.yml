@@ -1,0 +1,72 @@
+- name: make k8s dir
+  file:
+    path: '{{ item }}'
+    state: directory
+    mode: 0755
+  with_items:
+  - /etc/kubernetes/pki
+  - '{{ dpath }}/kubernetes/'
+  - $HOME/.kube
+
+- name: remove swapfile from /etc/fstab for CentOS
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Remove swapfile from /etc/fstab
+  mount:
+    name: "{{ item }}"
+    fstype: swap
+    state: absent
+  with_items:
+    - swap
+    - none
+
+- name: load ipvs
+  shell: |
+    modprobe ip_vs
+    modprobe ip_vs_rr
+    modprobe ip_vs_wrr
+    modprobe ip_vs_sh
+
+- name: clean yum cache
+  shell: |
+    yum clean all
+    
+- name: install kubernetes components for Redhat/CentOS
+  yum:
+    disablerepo: '*'
+    enablerepo: wise2c
+    update_cache: true
+    state: present
+    name: '{{ item }}'
+  with_items:
+  - kubernetes-cni
+  - kubectl-{{ kubernetes_version[1:] }}
+  - kubelet-{{ kubernetes_version[1:] }}
+  - kubeadm-{{ kubernetes_version[1:] }}
+
+- name: copy cfssl tool
+  copy:
+    src: '{{ item }}'
+    dest: /usr/local/bin
+    mode: '0755'
+  with_items:
+  - '{{ base_dir }}/bin/cfssl'
+  - '{{ base_dir }}/bin/cfssljson'
+  - '{{ base_dir }}/bin/cfssl-certinfo'
+  run_once: true
+
+- name: distribute kubelet config for Redhat/CentOS
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: 'kubelet.conf.j2', dest: '/etc/sysconfig/kubelet' }
+
+- name: reload & enable kubelet
+  systemd:
+    name: kubelet
+    daemon_reload: true
+    enabled: true

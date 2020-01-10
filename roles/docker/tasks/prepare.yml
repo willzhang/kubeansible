@@ -1,0 +1,75 @@
+- name: set hostname
+  hostname:
+    name: '{{ inventory_hostname }}'
+  when: format_hostname
+
+- name: disabled selinux
+  selinux:
+    state: disabled
+
+- name: start firewalld
+  systemd:
+    name: firewalld
+    enabled: true
+    state: started
+
+- name: config firewalld
+  shell: |
+    firewall-cmd --set-default-zone=trusted
+    firewall-cmd --complete-reload
+
+- name: distribute yum repo
+  template:
+    src: kubeansible.repo.j2
+    dest: /etc/yum.repos.d/kubeansible.repo
+
+- name: distribute ipvs bootload file
+  template:
+    src: ipvs.conf.j2
+    dest: /etc/modules-load.d/ipvs.conf
+
+- name: distribute chrony server config for Redhat/CentOS
+  template:
+    src: chrony-server.conf.j2
+    dest: /etc/chrony.conf
+  when:
+  - inventory_hostname == ansible_play_batch[0]
+
+- name: distribute chrony client config for Redhat/CentOS
+  template:
+    src: chrony-client.conf.j2
+    dest: /etc/chrony.conf
+  when:
+  - inventory_hostname != ansible_play_batch[0]
+
+- name: start chrony for Redhat/CentOS
+  systemd:
+    name: chronyd
+    daemon_reload: true
+    enabled: yes
+    state: restarted
+
+- name: get repo server ip
+  shell:
+    echo $SSH_CONNECTION | cut -d " " -f 1
+  register: ip
+
+- name: add seed host to /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    block: '{{ ip.stdout }} {{ kubeansible_seed_host }}'
+    marker: '# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ kubeansible_seed_host }}'
+
+- name: update /etc/hosts file
+  become: true
+  blockinfile:
+    dest: /etc/hosts
+    content: "{{ lookup('template', 'hosts.j2') }}"
+    state: present
+
+#- name: add all host to /etc/hosts
+#  blockinfile:
+#    path: /etc/hosts
+#    block: '{{ item.key }} {{ item.value.ansible_host }} {{ inventory_hostname }}'
+#    marker: "# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ item.key }}"
+#  with_dict: "{{ hostvars }}"

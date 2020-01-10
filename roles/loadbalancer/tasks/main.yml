@@ -1,42 +1,25 @@
 - name: make lb dir
   file:
-    path: {{ DPATH_PATH }}
+    path: '{{ dpath }}/loadbalancer'
     state: directory
     mode: 0755
 
 - name: generate lb config
   template:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-    - { src: 'templates/haproxy.cfg.j2', dest: '{{ DPATH_PATH }}/haproxy.cfg' }
-    - { src: 'templates/keepalive.cfg.j2', dest: '{{ DPATH_PATH }}/keepalive.cfg' }
+    src: haproxy.cfg.j2
+    dest: '{{ dpath }}/loadbalancer/haproxy.cfg'
 
 - name: copy lb images
   copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-    - { src: '{{ PKG_PATH }}/haproxy-{{ haproxy_version }}.tar.bz2', dest: '{{ DPATH_PATH }}/' }
-    - { src: '{{ PKG_PATH }}/keepalived-{{ keepalived_version }}.tar.bz2', dest: '{{ DPATH_PATH }}/' }
-  run_once: true
-
-- name: copy keepalived script
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-    - { src: 'file/keepalived.sh', dest: '{{  DPATH_PATH  }}/' }
+    src: '{{ base_dir }}/image/haproxy-{{ haproxy_version }}.tar.bz2'
+    dest: '{{ dpath }}/loadbalancer'
 
 - name: load lb image
   docker_image:
-    load_path: '{{  DPATH_PATH  }}/{{ item }}'
+    source: load
+    load_path: '{{ dpath  }}/loadbalancer/haproxy-{{ haproxy_version }}.tar.bz2'
     name: lb
     timeout: 600
-  with_items:
-    - haproxy-{{ haproxy_version }}.tar.bz2
-    - keepalived-{{ keepalived_version }}.tar.bz2
-  run_once: true
 
 - name: docker login
   docker_login:
@@ -46,25 +29,15 @@
     reauthorize: true
   run_once: true
 
-- name: tag images
+- name: Tag and push to local registry
   docker_image:
     name: '{{ item.repo }}/{{ item.name }}'
     repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
     tag: '{{ item.tag }}'
+    push: yes
+    source: local
   with_items:
-    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
-    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
-  run_once: true
-
-- name: push images
-  docker_image:
-    name: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-    push: true
-    state: present
-  with_items:
-    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
-    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
+    - { repo: 'docker.io', name: 'haproxy', tag: '{{ haproxy_version }}' }
   run_once: true
 
 - name: remove original images tag
@@ -73,37 +46,16 @@
     name: '{{ item.repo }}/{{ item.name }}'
     tag: '{{ item.tag }}'
   with_items:
-    - { repo: 'wise2c', name: 'k8s-haproxy', tag: '{{ haproxy_version }}' }
-    - { repo: 'wise2c', name: 'k8s-keepalived', tag: '{{ keepalived_version }}' }
+    - { repo: 'docker.io', name: 'haproxy', tag: '{{ haproxy_version }}' }
   run_once: ture
 
-- name: get port
-  set_fact:
-    ports: |
-      {% set ports = ports | d([]) + ['{0}:{1}'.format(item.target, item.port + 1)] %}
-      {{ ports | list }}
-  with_items:
-  - "{{ servers | d([], true) | list }}"
-  run_once: true
-
-- name: run haproxy
+- name: run lb
   docker_container:
     name: haproxy
     restart_policy: unless-stopped
-    image: "{{ registry_endpoint }}/{{ registry_project }}/k8s-haproxy:{{ haproxy_version  }}"
-    ports: '{{ ports | d([], true) | list }}'
+    image: "{{ registry_endpoint }}/{{ registry_project }}/haproxy:{{ haproxy_version }}"
+    ports:
+     - "{{ lb_kube_apiserver_port }}:6443"
+     - "8081:8081"
     volumes:
-    - '{{  DPATH_PATH  }}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'
-
-- name: run keepalived
-  docker_container:
-    name: keepalived
-    network_mode: host
-    restart_policy: unless-stopped
-    capabilities: NET_ADMIN
-    image: "{{ registry_endpoint }}/{{ registry_project }}/k8s-keepalived:{{ keepalived_version }}"
-    entrypoint: /bin/bash
-    command: /usr/bin/keepalived.sh
-    volumes:
-    - '{{  DPATH_PATH  }}/keepalive.cfg:/etc/keepalived/keepalived.conf'
-    - '{{  DPATH_PATH  }}/keepalived.sh:/usr/bin/keepalived.sh'
+    - '{{ dpath }}/loadbalancer/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro'

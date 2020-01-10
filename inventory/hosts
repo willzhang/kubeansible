@@ -1,27 +1,28 @@
+[allnodes]
+master01 ansible_ssh_host=172.16.40.12 ansible_ssh_user="root" ansible_ssh_pass=123456
+master02 ansible_ssh_host=172.16.40.13 ansible_ssh_user="root" ansible_ssh_pass=123456
+master03 ansible_ssh_host=172.16.40.14 ansible_ssh_user="root" ansible_ssh_pass=123456
+node01   ansible_ssh_host=172.16.40.15 ansible_ssh_user="root" ansible_ssh_pass=123456
+harbor   ansible_ssh_host=172.16.40.16 ansible_ssh_user="root" ansible_ssh_pass=123456
+
 [master]
-172.16.40.12 hostname=master01
-172.16.40.13 hostname=master02
-172.16.40.14 hostname=master03
+master01
+master02
+master03
 
 [node]
-172.16.40.15 hostname=node01
+node01
 
-[lb]
-172.16.40.12 hostname=master01
-172.16.40.13 hostname=master02
-172.16.40.14 hostname=master03
-
-[harbor]
-172.16.40.16 hostname=harbor
+[registry]
+harbor
 
 [etcd]
-172.16.40.12 hostname=master01
-172.16.40.13 hostname=master02
-172.16.40.14 hostname=master03
+master01
+master02
+master03
 
-[allnodes]
-172.16.40.12 ansible_ssh_user="root" ansible_ssh_pass=123456
-172.16.40.13 ansible_ssh_user="root" ansible_ssh_pass=123456
-172.16.40.14 ansible_ssh_user="root" ansible_ssh_pass=123456
-172.16.40.15 ansible_ssh_user="root" ansible_ssh_pass=123456
-172.16.40.16 ansible_ssh_user="root" ansible_ssh_pass=123456
+[cluster:children]
+master
+node
+
+

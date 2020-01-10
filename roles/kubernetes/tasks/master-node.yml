@@ -1,19 +1,10 @@
-- name: init setup on master nodes
-  include_tasks: both.yml
-
 - name: copy k8s images
   copy:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: '{{ PKG_PATH }}/k8s.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/flannel.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/dashboard.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/metrics-scraper.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/metrics-server.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/contour.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/contour-envoyproxy.tar.bz2', dest: '{{ DPATH }}' }
-  - { src: '{{ PKG_PATH }}/contour-demo.tar.bz2', dest: '{{ DPATH }}' }
+  - { src: '{{ base_dir }}/image/k8s.tar.bz2', dest: '{{ dpath }}/kubernetes' }
+  - { src: '{{ base_dir }}/image/flannel.tar.bz2', dest: '{{ dpath }}/kubernetes' }
   run_once: true
 
 - name: copy calico folder
@@ -21,38 +12,16 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'file/calico', dest: '{{ DPATH }}/' }
+  - { src: '{{ base_dir }}/image/calico', dest: '{{ dpath }}/' }
   run_once: true
-
-- name: copy calico images
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: '{{ PKG_PATH }}/calico/images', dest: '{{ DPATH }}/calico' }
-  run_once: true
-
-- name: copy metrics-server folder
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: 'file/metrics-server', dest: '{{ DPATH }}/' }
 
 - name: load k8s images
   docker_image:
-    load_path: '{{ DPATH }}/{{ item }}'
+    load_path: '{{ dpath }}/{{ item }}'
     name: k8s
     timeout: 600
   with_items:
-  - k8s.tar.bz2
-  - flannel.tar.bz2
-  - dashboard.tar.bz2
-  - metrics-scraper.tar.bz2
-  - metrics-server.tar.bz2
-  - contour.tar.bz2
-  - contour-envoyproxy.tar.bz2
-  - contour-demo.tar.bz2
+  - kubernetes/k8s.tar.bz2
   - calico/images/calico-cni.tar.bz2
   - calico/images/calico-kube-controllers.tar.bz2
   - calico/images/calico-node.tar.bz2
@@ -81,19 +50,12 @@
   - { repo: '{{ kubernetes_repo }}', name: 'kube-proxy', tag: '{{ kubernetes_version }}' }
   - { repo: '{{ kubernetes_repo }}', name: 'pause', tag: '{{ pause_version }}' }
   - { repo: '{{ kubernetes_repo }}', name: 'coredns', tag: '{{ dns_version }}' }
-  - { repo: '{{ metrics_server_repo }}', name: 'metrics-server-amd64', tag: '{{ metrics_server_version }}' }
-  - { repo: '{{ flannel_repo }}', name: 'flannel', tag: '{{ flannel_version }}' }
   - { repo: 'calico', name: 'cni', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'kube-controllers', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'node', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'typha', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'pod2daemon-flexvol', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'ctl', tag: '{{ calico_version }}' }
-  - { repo: '{{ dashboard_repo }}', name: 'dashboard', tag: '{{ dashboard_version }}' }
-  - { repo: '{{ dashboard_repo }}', name: 'metrics-scraper', tag: '{{ metrics_scraper_version }}' }
-  - { repo: '{{ contour_repo }}', name: 'contour', tag: '{{ contour_version }}' }
-  - { repo: '{{ contour_envoyproxy_repo }}', name: 'envoy', tag: '{{ contour_envoyproxy_version }}' }
-  - { repo: '{{ contour_demo_repo }}', name: 'kuard-amd64', tag: '1' }
   run_once: true
 
 - name: push images
@@ -109,19 +71,12 @@
   - { name: 'kube-proxy', tag: '{{ kubernetes_version }}' }
   - { name: 'pause', tag: '{{ pause_version }}' }
   - { name: 'coredns', tag: '{{ dns_version }}' }
-  - { name: 'metrics-server-amd64', tag: '{{ metrics_server_version }}' }
-  - { name: 'flannel', tag: '{{ flannel_version }}' }
   - { name: 'cni', tag: '{{ calico_version }}' }
   - { name: 'kube-controllers', tag: '{{ calico_version }}' }
   - { name: 'node', tag: '{{ calico_version }}' }
   - { name: 'typha', tag: '{{ calico_version }}' }
   - { name: 'pod2daemon-flexvol', tag: '{{ calico_version }}' }
   - { name: 'ctl', tag: '{{ calico_version }}' }
-  - { name: 'dashboard', tag: '{{ dashboard_version }}' }
-  - { name: 'metrics-scraper', tag: '{{ metrics_scraper_version }}' }
-  - { name: 'contour', tag: '{{ contour_version }}' }
-  - { name: 'envoy', tag: '{{ contour_envoyproxy_version }}' }
-  - { name: 'kuard-amd64', tag: '1' }
   run_once: true
 
 - name: Remove k8s.gcr.io and original images tag
@@ -136,19 +91,12 @@
   - { repo: '{{ kubernetes_repo }}', name: 'kube-proxy', tag: '{{ kubernetes_version }}' }
   - { repo: '{{ kubernetes_repo }}', name: 'pause', tag: '{{ pause_version }}' }
   - { repo: '{{ kubernetes_repo }}', name: 'coredns', tag: '{{ dns_version }}' }
-  - { repo: '{{ metrics_server_repo }}', name: 'metrics-server-amd64', tag: '{{ metrics_server_version }}' }
-  - { repo: '{{ flannel_repo }}', name: 'flannel', tag: '{{ flannel_version }}' }
   - { repo: 'calico', name: 'cni', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'kube-controllers', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'node', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'typha', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'pod2daemon-flexvol', tag: '{{ calico_version }}' }
   - { repo: 'calico', name: 'ctl', tag: '{{ calico_version }}' }
-  - { repo: '{{ dashboard_repo }}', name: 'dashboard', tag: '{{ dashboard_version }}' }
-  - { repo: '{{ dashboard_repo }}', name: 'metrics-scraper', tag: '{{ metrics_scraper_version }}' }
-  - { repo: '{{ contour_repo }}', name: 'contour', tag: '{{ contour_version }}' }
-  - { repo: '{{ contour_envoyproxy_repo }}', name: 'envoy', tag: '{{ contour_envoyproxy_version }}' }
-  - { repo: '{{ contour_demo_repo }}', name: 'kuard-amd64', tag: '1' }
   run_once: ture
 
 - name: install git command for helm-push and perl library for ipcalc
@@ -167,13 +115,8 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/kubeadm.conf.j2', dest: '{{ DPATH }}/kubeadm.conf' }
-  - { src: 'templates/kube-flannel.yml.j2', dest: '{{ DPATH }}/kube-flannel.yml' }
-  - { src: 'templates/kubernetes-dashboard.yml.j2', dest: '{{ DPATH }}/kubernetes-dashboard.yml' }
-  - { src: 'templates/kubernetes-dashboard-svc.yml.j2', dest: '{{ DPATH }}/kubernetes-dashboard-svc.yml' }
-  - { src: 'templates/metrics-server-deployment.yaml.j2', dest: '{{ DPATH }}/metrics-server/metrics-server-deployment.yaml' }
-  - { src: 'templates/contour.yml.j2', dest: '{{ DPATH }}/contour.yml' }
-  - { src: 'templates/contour-demo.yml.j2', dest: '{{ DPATH }}/contour-demo.yml' }
+  - { src: 'kubeadm.conf.j2', dest: '{{ dpath }}/kubernetes/kubeadm.conf' }
+  - { src: 'kube-flannel.yml.j2', dest: '{{ dpath }}/kubernetes/kube-flannel.yml' }
 
 - name: replace pod cidr 10.244.0.0/16 in kubeadm.conf files
   replace:
@@ -181,7 +124,7 @@
     regexp: "podSubnet: 10.244.0.0/16"
     replace: "podSubnet: {{ pod_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/kubeadm.conf" }
+    - { filename: "{{ dpath }}/kubernetes/kubeadm.conf" }
 
 - name: replace ClusterCIDR 10.244.0.0/16 in kubeadm.conf files
   replace:
@@ -189,7 +132,7 @@
     regexp: "clusterCIDR: 10.244.0.0/16"
     replace: "clusterCIDR: {{ cluster_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/kubeadm.conf" }
+    - { filename: "{{ dpath }}/kubernetes/kubeadm.conf" }
 
 - name: replace serviceSubnet 10.96.0.0/12 in kubeadm.conf files
   replace:
@@ -197,19 +140,19 @@
     regexp: "serviceSubnet: 10.96.0.0/12"
     replace: "serviceSubnet: {{ service_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/kubeadm.conf" }
+    - { filename: "{{ dpath }}/kubernetes/kubeadm.conf" }
 
 - name: copy certificates JSON files
   copy:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'file/ca-csr.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/ca-config.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/apiserver-csr.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/kubelet-csr.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/front-proxy-ca-csr.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/front-proxy-client-csr.json', dest: '{{ DPATH }}/' }
+  - { src: 'ca-csr.json', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'ca-config.json', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'apiserver-csr.json', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'kubelet-csr.json', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'front-proxy-ca-csr.json', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'front-proxy-client-csr.json', dest: '{{ dpath }}/kubernetes/' }
 
 - name: copy certificates generation scripts
   template:
@@ -217,19 +160,19 @@
     dest: '{{ item.dest }}'
     mode: 0755
   with_items:
-  - { src: 'file/generate-other-certificates.sh', dest: '{{ DPATH }}/' }
-  - { src: 'file/generate-apiserver-certificate.sh', dest: '{{ DPATH }}/' }
+  - { src: 'generate-other-certificates.sh', dest: '{{ dpath }}/kubernetes/' }
+  - { src: 'generate-apiserver-certificate.sh', dest: '{{ dpath }}/kubernetes/' }
 
 - name: copy service_cidr.txt
   template:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/service_cidr.txt.j2', dest: '{{ DPATH }}/service_cidr.txt' }
+  - { src: 'service_cidr.txt.j2', dest: '{{ dpath }}/kubernetes/service_cidr.txt' }
 
 - name: unarchive ipcalc tool
   unarchive:
-    src: '{{ PKG_PATH }}/ipcalc-0.41.tar.gz'
+    src: '{{ base_dir }}/ipcalc-0.41.tar.gz'
     dest: /usr/local/bin
 
 - name: make a link for ipcalc
@@ -241,7 +184,7 @@
   shell: |
     /var/lib/kubeansible/kubernetes/generate-other-certificates.sh
   args:
-    chdir: '{{ DPATH }}'
+    chdir: '{{ dpath }}'
   run_once: true
 
 - name: fetch certificates
@@ -282,7 +225,7 @@
   shell: |
     /var/lib/kubeansible/kubernetes/generate-apiserver-certificate.sh
   args:
-    chdir: '{{ DPATH }}'
+    chdir: '{{ dpath }}'
 
 - name: copy kubeadm-token.sh and update-api-advertise-address.sh
   copy:
@@ -290,13 +233,13 @@
     dest: '{{ item.dest }}'
     mode: 0755
   with_items:
-  - { src: 'file/kubeadm-token.sh', dest: '{{ DPATH }}/' }
-  - { src: 'file/update-api-advertise-address.sh', dest: '{{ DPATH }}/' }
+  - { src: 'file/kubeadm-token.sh', dest: '{{ dpath }}/' }
+  - { src: 'file/update-api-advertise-address.sh', dest: '{{ dpath }}/' }
 
 - name: kubeadm token generate
   shell: ./kubeadm-token.sh
   args:
-    chdir: '{{ DPATH }}'
+    chdir: '{{ dpath }}'
   run_once: true
 
 - name: fetch kubeadm.conf
@@ -305,7 +248,7 @@
     dest: '{{ item.dest }}'
     flat: true
   with_items:
-  - { src: '{{ DPATH }}/kubeadm.conf', dest: 'templates/kubeadm.conf' }
+  - { src: '{{ dpath }}/kubeadm.conf', dest: 'templates/kubeadm.conf' }
   run_once: true
 
 - name: copy kubeadm.conf
@@ -313,16 +256,16 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'templates/kubeadm.conf', dest: '{{ DPATH }}/' }
+  - { src: 'templates/kubeadm.conf', dest: '{{ dpath }}/' }
 
 - name: update apiserver advertise address.sh
   shell: ./update-api-advertise-address.sh
   args:
-    chdir: '{{ DPATH }}'
+    chdir: '{{ dpath }}'
 
 - name: kubeadm init
   shell: |
-    kubeadm init --config {{ DPATH }}/kubeadm.conf
+    kubeadm init --config {{ dpath }}/kubeadm.conf
 
 - name: fetch admin.conf
   fetch:
@@ -344,12 +287,12 @@
     regexp: '"name": "cbr0",'
     replace: '"name": "cbr0",\n      "cniVersion":"0.3.1",'
   with_items:
-  - { filename: '{{ DPATH }}/kube-flannel.yml' }
+  - { filename: '{{ dpath }}/kube-flannel.yml' }
   run_once: true
 
 - name: apply flannel cni
   shell: |
-    kubectl apply -f {{ DPATH }}/kube-flannel.yml
+    kubectl apply -f {{ dpath }}/kube-flannel.yml
   run_once: true
   when: cni == 'Flannel'
 
@@ -359,10 +302,10 @@
     regexp: "image: calico/"
     replace: "image: {{ registry_endpoint }}/{{ registry_project }}/"
   with_items:
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico-typha.yaml" }
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/canal.yaml" }
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calicoctl.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calicoctl.yaml" }
   run_once: true
 
 - name: replace image repo in canal yaml files
@@ -371,7 +314,7 @@
     regexp: "image: quay.io/coreos/flannel:{{ flannel_version_short }}"
     replace: "image: {{ registry_endpoint }}/{{ registry_project }}/flannel:{{ flannel_version }}"
   with_items:
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/canal.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
   run_once: true
 
 - name: replace pod cidr in calico yaml files
@@ -380,8 +323,8 @@
     regexp: "192.168.0.0/16"
     replace: "{{ pod_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico-typha.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
   run_once: true
 
 - name: replace pod cidr 10.244.0.0/16 in canal yaml files
@@ -390,7 +333,7 @@
     regexp: "10.244.0.0/16"
     replace: "{{ pod_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/canal.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
   run_once: true
 
 - name: replace calico_mode in calico yaml files
@@ -399,8 +342,8 @@
     regexp: "value: \"Always\""
     replace: "value: \"Never\""
   with_items:
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ DPATH }}/calico/k8s-manifests/calico-typha.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
+    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
   when: calico_mode == 'BGP'
   run_once: true
 
@@ -410,8 +353,8 @@
     regexp: '- name: FELIX_HEALTHENABLED[\S\s]*?value: "true"'
     replace: '- name: FELIX_HEALTHENABLED\n              value: "true"\n            - name: IP_AUTODETECTION_METHOD\n              value: {{ calico_node_ip_detection_mode }}'
   with_items:
-  - { filename: '{{ DPATH }}/calico/k8s-manifests/calico.yaml' }
-  - { filename: '{{ DPATH }}/calico/k8s-manifests/calico-typha.yaml' }
+  - { filename: '{{ dpath }}/calico/k8s-manifests/calico.yaml' }
+  - { filename: '{{ dpath }}/calico/k8s-manifests/calico-typha.yaml' }
   run_once: true
 
 - name: replace pod cidr 10.244.0.0/16 in flannel yaml files
@@ -420,76 +363,48 @@
     regexp: "10.244.0.0/16"
     replace: "{{ pod_cidr }}"
   with_items:
-    - { filename: "{{ DPATH }}/kube-flannel.yml" }
+    - { filename: "{{ dpath }}/kube-flannel.yml" }
   run_once: true
 
 - name: apply calico cni for cluster with more than 50 nodes
   shell: |
-    kubectl apply -f {{ DPATH }}/calico/k8s-manifests/calico-typha.yaml
-    kubectl apply -f {{ DPATH }}/calico/k8s-manifests/calicoctl.yaml
+    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calico-typha.yaml
+    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calicoctl.yaml
   run_once: true
   when: (cni == 'Calico') and (calico_nodes == 'More_than_50_nodes')
 
 - name: apply calico cni for cluster with 50 nodes or less
   shell: |
-    kubectl apply -f {{ DPATH }}/calico/k8s-manifests/calico.yaml
-    kubectl apply -f {{ DPATH }}/calico/k8s-manifests/calicoctl.yaml
+    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calico.yaml
+    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calicoctl.yaml
   run_once: true
   when: (cni == 'Calico') and (calico_nodes == '50_nodes_or_less')
 
-- name: apply canal cni
-  shell: |
-    kubectl apply -f {{ DPATH }}/calico/k8s-manifests/canal.yaml
-  run_once: true
-  when: cni == 'Canal'
-
-- name: apply addons
-  shell: |
-    kubectl apply -f {{ DPATH }}/kubernetes-dashboard.yml
-    kubectl apply -f {{ DPATH }}/kubernetes-dashboard-svc.yml
-    kubectl apply -f {{ DPATH }}/contour.yml
-    kubectl apply -f {{ DPATH }}/contour-demo.yml
-    kubectl apply -f {{ DPATH }}/metrics-server/
-  run_once: true
-
 - name: update kube-proxy HA setting
   shell: |
-    kubectl -n kube-system get cm kube-proxy -o yaml > {{ DPATH }}/kube-proxy-cm.yaml
-    sed -i "s#.*server:.*#        server: https://{{ endpoint }}#g" {{ DPATH }}/kube-proxy-cm.yaml
-    kubectl -n kube-system apply -f {{ DPATH }}/kube-proxy-cm.yaml
+    kubectl -n kube-system get cm kube-proxy -o yaml > {{ dpath }}/kube-proxy-cm.yaml
+    sed -i "s#.*server:.*#        server: https://{{ endpoint }}#g" {{ dpath }}/kube-proxy-cm.yaml
+    kubectl -n kube-system apply -f {{ dpath }}/kube-proxy-cm.yaml
   run_once: true
 
 - name: execute prometheus-fix-master-nodes script for Redhat/CentOS
   shell: ./prometheus-fix-master-nodes.sh
   args:
-    chdir: '{{ DPATH }}'
+    chdir: '{{ dpath }}'
   when: (ansible_distribution =="RedHat") or (ansible_distribution =="CentOS")
-
-- name: execute prometheus-fix-master-nodes script for Ubuntu
-  shell: ./prometheus-fix-master-nodes-ubuntu.sh
-  args:
-    chdir: '{{ DPATH }}'
-  when: ansible_distribution =="Ubuntu"
-
-- name: copy helm binary
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: '{{ PKG_PATH }}/helm-linux-amd64.tar.gz', dest: '{{ DPATH }}' }
-
-- name: install helm binary
-  shell: |
-    tar zxvf {{ DPATH }}/helm-linux-amd64.tar.gz --strip-components=1 -C /tmp/
-    mv /tmp/helm /usr/local/bin/helm
-
-- name: upgrade helm repo
-  shell: |
-    helm repo add --username={{ registry_user }} --password={{ registry_password }} {{ registry_project }} http://{{ registry_endpoint }}/chartrepo/{{ registry_project }}
-  when: not registry_https
 
 - name: scale calico-typha replicas
   shell: |
     kubectl -n kube-system scale deployment calico-typha --replicas={{ calico_typha_replicas }}
   run_once: true
   when: (cni == 'Calico') and (calico_nodes == 'More_than_50_nodes')
+  
+  
+- name: fetch admin.conf
+  fetch:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    flat: true
+  with_items:
+  - { src: '/etc/kubernetes/admin.conf', dest: 'file/admin.conf' }
+  run_once: true

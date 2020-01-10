@@ -1,5 +1,5 @@
 ---
-- hosts: allnodes
+- hosts: all
   gather_facts: yes
   roles:
     - docker

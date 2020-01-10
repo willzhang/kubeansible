@@ -1,56 +1,21 @@
-- name: copy backup scripts
-  template:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-    mode: 0755
-  with_items:
-  - { src: 'file/backup-etcd-database-folder.sh', dest: '{{ DPATH }}/' }
-  - { src: 'file/make-etcd-snapshot.sh', dest: '{{ DPATH }}/' }
-  - { src: 'file/etcd-healthcheck.sh', dest: '{{ DPATH }}/' }
-
-- name: make a snapshot for etcd cluster
-  shell: ./make-etcd-snapshot.sh
-  args:
-    chdir: '{{ DPATH }}'
-  when: (snapshot_etcd == true)
-
-- name: stop etcd container
-  shell: |
-    docker stop etcd
-  when: (backup_etcd_folder == true)
-
-- name: backup etcd database folder
-  shell: ./backup-etcd-database-folder.sh
-  args:
-    chdir: '{{ DPATH }}'
-  when: (backup_etcd_folder == true)
-
-- name: start etcd container
-  shell: |
-    docker start etcd
-  when: (backup_etcd_folder == true)
-
 - name: make etcd dir
   file:
-    path: '{{ item }}'
+    path: '{{ dpath }}/etcd'
     state: directory
     mode: 0755
-  with_items:
-    - '{{ DPATH }}'
 
 - name: copy etcd image
   copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-    - { src: '{{ PKG_PATH }}/etcd.tar.bz2', dest: '{{ DPATH }}' }
+    src: '{{ base_dir }}/image/etcd.tar.bz2'
+    dest: '{{ dpath }}/etcd'
   run_once: true
 
 - name: load etcd image
   docker_image:
-    load_path: '{{ DPATH }}/etcd.tar.bz2'
+    load_path: '{{ dpath }}/etcd/etcd.tar.bz2'
     name: etcd
     timeout: 600
+    source: load
   run_once: true
 
 - name: docker login
@@ -61,21 +26,13 @@
     reauthorize: true
   run_once: true
 
-- name: tag images
+- name: Tag and push to local registry
   docker_image:
     name: '{{ item.repo }}/{{ item.name }}'
     repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
     tag: '{{ item.tag }}'
-  with_items:
-    - { repo: 'k8s.gcr.io', name: 'etcd-amd64', tag: '{{ etcd_version }}' }
-  run_once: true
-
-- name: push images
-  docker_image:
-    name: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-    push: true
-    state: present
+    push: yes
+    source: local
   with_items:
     - { repo: 'k8s.gcr.io', name: 'etcd-amd64', tag: '{{ etcd_version }}' }
   run_once: true
@@ -95,34 +52,38 @@
     state: directory
     mode: 0755
 
-- name: unarchive cfssl tool
-  unarchive:
-    src: '{{ PKG_PATH }}/cfssl-tools.tar.gz'
+- name: copy cfssl tool
+  copy:
+    src: '{{ item }}'
     dest: /usr/local/bin
+    mode: '0755'
+  with_items:
+  - '{{ base_dir }}/bin/cfssl'
+  - '{{ base_dir }}/bin/cfssljson'
+  - '{{ base_dir }}/bin/cfssl-certinfo'
   run_once: true
 
 - name: copy certificates JSON files
   copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: 'file/ca-csr.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/ca-config.json', dest: '{{ DPATH }}/' }
-  - { src: 'file/etcd-csr.json', dest: '{{ DPATH }}/' }
-  run_once: true
-
-- name: copy certificates generation scripts
-  template:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
+    src: '{{ item }}'
+    dest: '{{ dpath }}/etcd/'
     mode: 0755
   with_items:
-  - { src: 'file/generate-etcd-certificates.sh', dest: '{{ DPATH }}/' }
+  - ca-csr.json
+  - ca-config.json
+  - etcd-csr.json
+  - generate-etcd-certificates.sh
   run_once: true
 
 - name: generate etcd certificates
-  raw: |
-    /var/lib/kubeansible/etcd/generate-etcd-certificates.sh
+  shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca && \
+    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json \
+    -hostname=127.0.0.1,{% for host in play_hosts %}{{ host }}{% if not loop.last %},{% endif %}{% endfor %} \
+    -profile=etcd etcd-csr.json | cfssljson -bare etcd && \
+    cp *.pem /etc/etcd/pki/"
+  args:
+    chdir: '{{ dpath }}/etcd/'
+    creates: '/etc/etcd/pki/*.pem'
   run_once: true
 
 - name: fetch etcd certificates
@@ -131,10 +92,10 @@
     dest: '{{ item.dest }}'
     flat: true
   with_items:
-  - { src: '/etc/etcd/pki/ca.pem', dest: 'file/ca.pem' }
-  - { src: '/etc/etcd/pki/ca-key.pem', dest: 'file/ca-key.pem' }
-  - { src: '/etc/etcd/pki/etcd.pem', dest: 'file/etcd.pem' }
-  - { src: '/etc/etcd/pki/etcd-key.pem', dest: 'file/etcd-key.pem' }
+  - { src: '/etc/etcd/pki/ca.pem', dest: 'ca.pem' }
+  - { src: '/etc/etcd/pki/ca-key.pem', dest: 'ca-key.pem' }
+  - { src: '/etc/etcd/pki/etcd.pem', dest: 'etcd.pem' }
+  - { src: '/etc/etcd/pki/etcd-key.pem', dest: 'etcd-key.pem' }
   run_once: true
 
 - name: copy certificates
@@ -142,10 +103,10 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'file/ca.pem', dest: '/etc/etcd/pki/ca.pem' }
-  - { src: 'file/ca-key.pem', dest: '/etc/etcd/pki/ca-key.pem' }
-  - { src: 'file/etcd.pem', dest: '/etc/etcd/pki/etcd.pem' }
-  - { src: 'file/etcd-key.pem', dest: '/etc/etcd/pki/etcd-key.pem' }
+  - { src: 'ca.pem', dest: '/etc/etcd/pki/ca.pem' }
+  - { src: 'ca-key.pem', dest: '/etc/etcd/pki/ca-key.pem' }
+  - { src: 'etcd.pem', dest: '/etc/etcd/pki/etcd.pem' }
+  - { src: 'etcd-key.pem', dest: '/etc/etcd/pki/etcd-key.pem' }
 
 - name: run etcd
   docker_container:
@@ -153,7 +114,26 @@
     network_mode: host
     restart_policy: unless-stopped
     image: "{{ registry_endpoint }}/{{ registry_project }}/etcd-amd64:{{ etcd_version }}"
-    command: '{{ command }}'
+    command: [
+        "etcd",
+        "{% for host in ansible_play_batch -%}{% if host == inventory_hostname -%}--name etcd{{ loop.index0 }}{% endif -%}{% endfor -%}",
+        "--data-dir /var/lib/etcd",
+        "--advertise-client-urls https://{{ hostvars[inventory_hostname].ansible_ssh_host }}:2379",
+        "--listen-client-urls https://{{ hostvars[inventory_hostname].ansible_ssh_host }}:2379",
+        "--listen-peer-urls https://{{ hostvars[inventory_hostname].ansible_ssh_host }}:2380",
+        "--initial-cluster-token etcd-cluster",
+        "--initial-advertise-peer-urls https://{{ hostvars[inventory_hostname].ansible_ssh_host }}:2380",
+        "--initial-cluster {% for host in groups['etcd'] %}etcd{{ loop.index0 }}=https://{{ hostvars[host].ansible_ssh_host }}:2380{% if not loop.last %},{% endif %}{% endfor %}",
+        "--initial-cluster-state new",
+        "--client-cert-auth",
+        "--trusted-ca-file=/etcd-cert/ca.pem",
+        "--cert-file=/etcd-cert/etcd.pem",
+        "--key-file=/etcd-cert/etcd-key.pem",
+        "--peer-client-cert-auth",
+        "--peer-trusted-ca-file=/etcd-cert/ca.pem",
+        "--peer-cert-file=/etcd-cert/etcd.pem",
+        "--peer-key-file=/etcd-cert/etcd-key.pem"
+      ]
     volumes:
       - "{{ etcd_data_path }}:/var/lib/etcd"
       - "/etc/etcd/pki:/etcd-cert"

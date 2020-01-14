@@ -2,20 +2,21 @@ apiVersion: kubeadm.k8s.io/v1beta2
 bootstrapTokens:
 - groups:
   - system:bootstrappers:kubeadm:default-node-token
-  token: wise2c-breeze-token
+  token: {{ bootstrap_token.stdout }}
   ttl: 0s
   usages:
   - signing
   - authentication
 kind: InitConfiguration
 localAPIEndpoint:
-  advertiseAddress: 127.0.0.1
+  advertiseAddress: {{ hostvars[inventory_hostname].ansible_ssh_host }}
   bindPort: 6443
 nodeRegistration:
   criSocket: /var/run/dockershim.sock
   taints:
   - effect: NoSchedule
     key: node-role.kubernetes.io/master
+
 ---
 apiServer:
   certSANs:
@@ -38,60 +39,27 @@ etcd:
   external:
     caFile: /etc/etcd/pki/ca.pem
     certFile: /etc/etcd/pki/etcd.pem
+    keyFile: /etc/etcd/pki/etcd-key.pem
     endpoints:
 {% for host in groups['etcd'] %}
-    - https://{{ host }}:2379
+    - https://{{ hostvars[host].ansible_ssh_host }}:2379
 {% endfor %}
-    keyFile: /etc/etcd/pki/etcd-key.pem
 imageRepository: {{ registry_endpoint }}/{{ registry_project }}
 kind: ClusterConfiguration
 kubernetesVersion: {{ kubernetes_version }}
 networking:
   dnsDomain: cluster.local
-  podSubnet: 10.244.0.0/16
-  serviceSubnet: 10.96.0.0/12
+  podSubnet: {{ pod_cird }}
+  serviceSubnet: {{ service_cird }}
 scheduler:
   extraArgs:
     feature-gates: LocalStorageCapacityIsolation=true
+
 ---
 apiVersion: kubeproxy.config.k8s.io/v1alpha1
-bindAddress: 0.0.0.0
-clientConnection:
-  acceptContentTypes: ""
-  burst: 10
-  contentType: application/vnd.kubernetes.protobuf
-  kubeconfig: /var/lib/kube-proxy/kubeconfig.conf
-  qps: 5
-clusterCIDR: 10.244.0.0/16
-configSyncPeriod: 15m0s
-conntrack:
-  maxPerCore: 32768
-  min: 131072
-  tcpCloseWaitTimeout: 1h0m0s
-  tcpEstablishedTimeout: 24h0m0s
-enableProfiling: false
-healthzBindAddress: 0.0.0.0:10256
-hostnameOverride: ""
-iptables:
-  masqueradeAll: false
-  masqueradeBit: 14
-  minSyncPeriod: 0s
-  syncPeriod: 30s
-ipvs:
-  excludeCIDRs: null
-  minSyncPeriod: 0s
-  scheduler: ""
-  strictARP: false
-  syncPeriod: 30s
 kind: KubeProxyConfiguration
-metricsBindAddress: 127.0.0.1:10249
+clusterCIDR: "{{ cluster_cird }}"
+bindAddress: 0.0.0.0
+featureGates:
+  SupportIPVSProxyMode: true
 mode: ipvs
-nodePortAddresses: null
-oomScoreAdj: -999
-portRange: ""
-resourceContainer: /kube-proxy
-udpIdleTimeout: 250ms
-winkernel:
-  enableDSR: false
-  networkName: ""
-  sourceVip: ""

@@ -1,2 +1,25 @@
-PKG_PATH: /workspace/packages/kubernetes
-DPATH: /var/lib/kubeansible/kubernetes
+kubernetes_version: v1.17.0
+endpoint: server.k8s.local:8443
+kubernetes_repo: k8s.gcr.io
+
+pod_cird: 10.244.0.0/16
+cluster_cird: 10.244.0.0/16
+service_cird: 10.96.0.0/12
+
+dns_version: 1.6.5
+pause_version: 3.1
+flannel_repo: quay.io/coreos
+flannel_version: v0.11.0-amd64
+flannel_version_short: v0.11.0
+calico_version: v3.10.3
+
+#or calico
+network_plugin: "flannel"
+
+calico_typha_replicas: 3
+#or IPIP_Tunnel
+calico_mode: BGP
+calico_node_ip_detection_mode: can-reach=172.16.40.11
+
+#or 50_nodes_or_less
+calico_nodes: More_than_50_nodes

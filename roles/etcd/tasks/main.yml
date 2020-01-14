@@ -6,7 +6,7 @@
 
 - name: copy etcd image
   copy:
-    src: '{{ base_dir }}/image/etcd.tar.bz2'
+    src: '{{ base_dir }}/images/etcd.tar.bz2'
     dest: '{{ dpath }}/etcd'
   run_once: true
 
@@ -72,13 +72,12 @@
   - ca-csr.json
   - ca-config.json
   - etcd-csr.json
-  - generate-etcd-certificates.sh
   run_once: true
 
 - name: generate etcd certificates
   shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca && \
     cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json \
-    -hostname=127.0.0.1,{% for host in play_hosts %}{{ host }}{% if not loop.last %},{% endif %}{% endfor %} \
+    -hostname=127.0.0.1,{% for host in groups['etcd'] %}{{ hostvars[host].ansible_ssh_host }},{% endfor %} \
     -profile=etcd etcd-csr.json | cfssljson -bare etcd && \
     cp *.pem /etc/etcd/pki/"
   args:

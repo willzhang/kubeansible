@@ -1,0 +1,65 @@
+- name: copy flannel images
+  copy:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: '{{ base_dir }}/images/flannel/flannel.tar.bz2', dest: '{{ dpath }}/flannel/' }
+  run_once: true
+
+- name: load flannel images
+  docker_image:
+    load_path: '{{ dpath }}/flannel/{{ item }}'
+    name: flannel
+    timeout: 600
+  with_items:
+  - flannel.tar.bz2
+  run_once: true
+
+- name: docker login
+  docker_login:
+    registry: '{{ registry_endpoint }}'
+    username: '{{ registry_user }}'
+    password: '{{ registry_password }}'
+    reauthorize: true
+  run_once: true
+
+- name: tag flannel images and push images
+  docker_image:
+    name: '{{ item.repo }}/{{ item.name }}'
+    repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
+    tag: '{{ item.tag }}'
+    push: yes
+    source: local
+  with_items:
+  - { repo: '{{ flannel_repo }}', name: 'flannel', tag: '{{ flannel_version }}' }
+  run_once: true
+
+- name: generate kube-flannel.yml files
+  template:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+  with_items:
+  - { src: '{{ base_dir }}/images/flannel/kube-flannel.yml.j2', dest: '{{ dpath }}/flannel/kube-flannel.yml' }
+
+- name: Remove flannel original images tag
+  docker_image:
+    state: absent
+    name: '{{ item.repo }}/{{ item.name }}'
+    tag: '{{ item.tag }}'
+  with_items:
+  - { repo: '{{ flannel_repo }}', name: 'flannel', tag: '{{ flannel_version }}' }
+  run_once: ture
+
+- name: replace pod cidr 10.244.0.0/16 in flannel yaml files
+  replace:
+    dest: "{{ item.filename }}"
+    regexp: "10.244.0.0/16"
+    replace: "{{ pod_cidr }}"
+  with_items:
+    - { filename: "{{ dpath }}/flannel/kube-flannel.yml" }
+  run_once: true
+
+- name: apply flannel cni
+  shell: |
+    kubectl apply -f {{ dpath }}/flannel/kube-flannel.yml
+  run_once: true

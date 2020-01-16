@@ -1,11 +1,11 @@
 #!/bin/bash
 
 path=`dirname $0`
-mkdir -p ${path}/packages{bin,images,files}
+mkdir -p ${path}/packages/{bin,images,files}
 base_dir=${path}/packages
 
 
-harbor_version=1.9.3
+harbor_version=v1.9.4
 docker_compose_version=1.24.1
 haproxy_version=2.1.0-alpine
 etcd_version=3.4.3-0
@@ -14,14 +14,10 @@ flannel_version=v0.11.0
 calico_version=v3.10.3
 ipcalc_version=0.41
 
-
-
-
 function get_harbor(){
-  curl -L https://storage.googleapis.com/harbor-releases/release-${harbor_version%.*}.0/harbor-offline-installer-v${harbor_version}.tgz \
-  -o ${base_dir}/file/harbor-offline-installer-v${harbor_version}.tgz
+  curl -L https://github.com/goharbor/harbor/releases/download/${harbor_version}/harbor-offline-installer-${harbor_version}.tgz \
+  -o ${base_dir}/files/harbor-offline-installer-${harbor_version}.tgz
 }
-
 
 function get_docker_compose(){
   curl -L https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-$(uname -s)-$(uname -m) -o ${base_dir}/bin/docker-compose
@@ -76,7 +72,7 @@ function get_flannel(){
 function get_calico(){
   mkdir -p ${base_dir}/images/calico/
   curl -L -o ${base_dir}/images/calico/calico-${calico_version}.tgz https://github.com/projectcalico/calico/releases/download/${calico_version}/release-${calico_version}.tgz
-  tar zxf ${base_dir}/images/calico/calico-${calico_version}.tgz -C ${base_dir}/image/calico/ --strip=1
+  tar zxf ${base_dir}/images/calico/calico-${calico_version}.tgz -C ${base_dir}/images/calico/ --strip=1
   rm -rf ${base_dir}/images/calico/calico-${calico_version}.tgz
   rm -rf ${base_dir}/images/calico/bin
   docker pull calico/pod2daemon-flexvol:${calico_version}
@@ -93,13 +89,11 @@ function get_calico(){
 
 
 function get_ipcalc(){
-  curl -L http://jodies.de/ipcalc-archive/ipcalc-${ipcalc_version}.tar.gz -o ${ipcalc_version}.tar.gz
-  tar -zxf ipcalc-${ipcalc_version}.tar.gz
-  cp ipcalc-${ipcalc_version}/ipcalc {base_dir}/bin/
+  curl -L http://jodies.de/ipcalc-archive/ipcalc-${ipcalc_version}.tar.gz -o ${base_dir}/files/ipcalc-${ipcalc_version}.tar.gz
 }
 
 get_harbor
-get_docker-compose
+get_docker_compose
 get_loadbalancer
 get_etcd
 get_cfssl

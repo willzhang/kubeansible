@@ -61,10 +61,3 @@
     dest: /etc/hosts
     content: "{{ lookup('template', 'hosts.j2') }}"
     state: present
-
-- name: add all hosts to /etc/hosts
-  blockinfile:
-    path: /etc/hosts
-    block: '{{ item.key }} {{ item.value.ansible_host }} {{ inventory_hostname }}'
-    marker: "# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ item.key }}"
-  with_dict: "{{ hostvars }}"

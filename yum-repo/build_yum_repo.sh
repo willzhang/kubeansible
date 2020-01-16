@@ -15,3 +15,7 @@ do
   yum -y install --downloadonly --downloaddir=/rpms chrony audit rsync jq git tcpdump nc bind-utils net-tools ipvsadm graphviz &&
   yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${KUBE_VERSION} kubelet-${KUBE_VERSION} kubeadm-${KUBE_VERSION}"
 done
+
+yum install -y createrepo
+yum clean all
+createrepo $PWD/rpms

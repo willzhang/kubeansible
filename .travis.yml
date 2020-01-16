@@ -25,6 +25,8 @@ jobs:
 
     - stage: build kubeansible image
       script:
+      - echo "path:${PWD}"
+      - ls ${PWD}/scripts
       - docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
       - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
       - docker push willdockerhub/kubeansible:$KUBE_VERSION

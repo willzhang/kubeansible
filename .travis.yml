@@ -21,4 +21,4 @@ script:
   - bash ./scripts/get_packages.sh
   - docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  - docker push willdockerhub/kubeansible:$KUBE_VERSION
+  - docker push willdockerhub/kubeansible:v$KUBE_VERSION

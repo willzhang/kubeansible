@@ -4,8 +4,6 @@ WORKDIR /data/
 
 COPY scripts/packages /data/
 
-COPY * /data/kubeansible
-
 RUN git cone https://github.com/willzhang/kubeansible.git --depth=1
 
 COPY rpms /usr/share/nginx/html/rpms

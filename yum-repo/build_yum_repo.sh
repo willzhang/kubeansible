@@ -16,6 +16,7 @@ do
   yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${KUBE_VERSION} kubelet-${KUBE_VERSION} kubeadm-${KUBE_VERSION}"
 done
 
-yum install -y createrepo
-yum clean all
-createrepo $PWD/rpms
+docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo centos:7.7.1908 \
+  bash -c"
+  yum  install -y createrepo &&
+  createrepo /rpms"

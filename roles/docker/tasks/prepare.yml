@@ -7,10 +7,6 @@
   shell: timedatectl set-timezone {{ timezone }}
   when: timezone is defined
 
-- name: disabled selinux
-  selinux:
-    state: disabled
-
 - name: start firewalld
   systemd:
     name: firewalld
@@ -26,11 +22,6 @@
   template:
     src: kubeansible.repo.j2
     dest: /etc/yum.repos.d/kubeansible.repo
-
-- name: distribute ipvs bootload file
-  template:
-    src: ipvs.conf.j2
-    dest: /etc/modules-load.d/ipvs.conf
 
 - name: distribute chrony server config for Redhat/CentOS
   template:
@@ -53,12 +44,12 @@
     enabled: yes
     state: restarted
 
-- name: get repo server ip
+- name: get yum repo server ip
   shell:
     echo $SSH_CONNECTION | cut -d " " -f 1
   register: ip
 
-- name: add seed host to /etc/hosts
+- name: add yum repo seed host to /etc/hosts
   blockinfile:
     path: /etc/hosts
     block: '{{ ip.stdout }} {{ kubeansible_seed_host }}'
@@ -71,9 +62,9 @@
     content: "{{ lookup('template', 'hosts.j2') }}"
     state: present
 
-#- name: add all host to /etc/hosts
-#  blockinfile:
-#    path: /etc/hosts
-#    block: '{{ item.key }} {{ item.value.ansible_host }} {{ inventory_hostname }}'
-#    marker: "# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ item.key }}"
-#  with_dict: "{{ hostvars }}"
+- name: add all hosts to /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    block: '{{ item.key }} {{ item.value.ansible_host }} {{ inventory_hostname }}'
+    marker: "# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ item.key }}"
+  with_dict: "{{ hostvars }}"

@@ -2,7 +2,7 @@ FROM willdockerhub/nginx:ansible
 
 WORKDIR /data/
 
-COPY packages /data/
+COPY scripts/packages/* /data/packages/
 
 RUN git cone https://github.com/willzhang/kubeansible.git --depth=1
 

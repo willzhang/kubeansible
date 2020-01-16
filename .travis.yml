@@ -16,11 +16,11 @@ jobs:
   include:
     - stage: build yum repo rpm packages
       script:
-      - ./yum-repo/build_yum_repo.sh
+      - sh yum-repo/build_yum_repo.sh
 
     - stage: get docker image and other files
       script:
-      - ./scripts/get_packages.sh
+      - sh scripts/get_packages.sh
 
     - stage: build kubeansible image
       script:

@@ -15,9 +15,6 @@ env:
  
 script:
   - bash ./yum-repo/build_yum_repo.sh
-  - echo "pwd:${PWD}"
-  - ls
-  - ls yum-repo/
   - bash ./scripts/get_packages.sh
   - docker build -t willdockerhub/kubeansible:v$KUBE_VERSION .
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD

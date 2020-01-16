@@ -1,6 +1,7 @@
 kubernetes_version: v1.17.0
 endpoint: server.k8s.local:8443
 kubernetes_repo: k8s.gcr.io
+ipcalc_version: 0.41
 
 pod_cird: 10.244.0.0/16
 cluster_cird: 10.244.0.0/16

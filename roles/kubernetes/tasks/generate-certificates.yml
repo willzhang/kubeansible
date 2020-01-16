@@ -30,16 +30,15 @@
   - { src: 'front-proxy-ca-csr.json', dest: '{{ dpath }}/kubernetes/' }
   - { src: 'front-proxy-client-csr.json', dest: '{{ dpath }}/kubernetes/' }
 
-- name: copy ipcalc tool
-  copy:
-    src: '{{ base_dir }}/bin/ipcalc'
-    dest: /usr/local/bin
-    mode: '0755'
+- name: unachive ipcalc tool
+  unachive: 
+    src: {{ base_dir }}/files/ipcalc-{{ ipcalc-version }}.tgz
+    dest: /usr/local/bin/
 
 - name: make a link for ipcalc
   shell: |
-    rm -f /usr/local/bin/ipcalc
-    ln -s /usr/local/bin/ipcalc-0.41/ipcalc /usr/local/bin/ipcalc
+    mv /usr/local/bin/ipcalc-{{ ipcalc_version }}/ipcalc /usr/local/bin/ipcalc
+    rm -rf /usr/local/bin/ipcalc-{{ ipcalc_version }}
 
 - name: generate other kubernetes certificates
   shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca && \

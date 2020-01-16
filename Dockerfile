@@ -6,6 +6,6 @@ COPY ./scripts/packages /data/
 
 RUN git clone https://github.com/willzhang/kubeansible.git --depth=1
 
-COPY ./yum-repo/rpms /usr/share/nginx/html/rpms
+COPY ./rpms /usr/share/nginx/html/rpms
 COPY ./yum-repo/index.html /usr/share/nginx/html
 COPY ./yum-repo/nginx.conf /etc/nginx/conf.d/default.conf

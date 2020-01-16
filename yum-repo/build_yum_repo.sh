@@ -1,14 +1,12 @@
 #!/bin/bash
 
-path=`dirname $0`
-mkdir -p ${path}/rpms
-
+echo "pwd:${PWD}"
 KUBE_VERSION=1.17.0
 DOCKER_VERSION=18.09.9-3
 
 for centos_version in centos:7.5.1804 centos:7.6.1810 centos:7.7.1908
 do
-  docker run -t --rm -v ${path}/rpms:/rpms -v ${path}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${centos_version} \
+  docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${centos_version} \
   bash -c "
   yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
   yum install -y yum-utils &&
@@ -20,7 +18,7 @@ do
   yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${KUBE_VERSION} kubelet-${KUBE_VERSION} kubeadm-${KUBE_VERSION}"
 done
 
-docker run -t --rm -v ${path}/rpms:/rpms -v ${path/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo centos:7.7.1908 \
+docker run -t --rm -v ${PWD}/rpms:/rpms centos:7.7.1908 \
   bash -c "
   yum  install -y createrepo &&
   createrepo /rpms"

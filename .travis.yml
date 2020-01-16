@@ -13,20 +13,10 @@ env:
  global:
    - KUBE_VERSION=1.17.0
  
-jobs:
-  include:
-    - stage: build yum repo rpm packages
-      script:
-      - bash yum-repo/build_yum_repo.sh
-
-    - stage: get docker image and other files
-      script:
-      - bash scripts/get_packages.sh
-
-    - stage: build kubeansible image
-      script:
-      - echo "path:${PWD}"
-      - ls ${PWD}/scripts
-      - docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
-      - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-      - docker push willdockerhub/kubeansible:$KUBE_VERSION
+script:
+- >
+  bash ./yum-repo/build_yum_repo.sh
+  bash ./scripts/get_packages.sh
+  docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
+  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  docker push willdockerhub/kubeansible:$KUBE_VERSION

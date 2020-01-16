@@ -4,7 +4,7 @@ WORKDIR /data/
 
 COPY ./scripts/packages /data/
 
-RUN git cone https://github.com/willzhang/kubeansible.git --depth=1
+RUN git clone https://github.com/willzhang/kubeansible.git --depth=1
 
 COPY ./yum-repo/rpms /usr/share/nginx/html/rpms
 COPY ./yum-repo/index.html /usr/share/nginx/html

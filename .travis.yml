@@ -15,8 +15,8 @@ env:
  
 script:
 - >
-  bash ./yum-repo/build_yum_repo.sh
-  bash ./scripts/get_packages.sh
-  docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
-  docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  docker push willdockerhub/kubeansible:$KUBE_VERSION
+  - bash ./yum-repo/build_yum_repo.sh
+  - bash ./scripts/get_packages.sh
+  - docker build -t willdockerhub/kubeansible:$KUBE_VERSION .
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - docker push willdockerhub/kubeansible:$KUBE_VERSION

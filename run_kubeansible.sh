@@ -1,7 +1,6 @@
 #!/bin/bash
-docker rm -f kubeansible
 docker run -d --name kubeansible \
   --restart always \
-  -v /data/git:/data \
-  cytopia/ansible:latest-tools \
-  sleep 10000000000000000000
+  -p 2009:2009 \
+  -v /data/:/data \
+  willdockerhub/kubeansible:v1.17.0

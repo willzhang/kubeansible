@@ -20,6 +20,11 @@
 - name: Turn swap off
   shell: swapoff -a
 
+- name: distribute ipvs bootload file
+  template:
+    src: ipvs.conf.j2
+    dest: /etc/modules-load.d/ipvs.conf
+
 - name: load ipvs
   shell: |
     modprobe ip_vs

@@ -11,6 +11,7 @@
     load_path: '{{ dpath }}/flannel/{{ item }}'
     name: flannel
     timeout: 600
+    source: load
   with_items:
   - flannel.tar.bz2
   run_once: true
@@ -39,7 +40,7 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: '{{ base_dir }}/images/flannel/kube-flannel.yml.j2', dest: '{{ dpath }}/flannel/kube-flannel.yml' }
+  - { src: 'kube-flannel.yml.j2', dest: '{{ dpath }}/flannel/kube-flannel.yml' }
 
 - name: Remove flannel original images tag
   docker_image:
@@ -50,11 +51,11 @@
   - { repo: '{{ flannel_repo }}', name: 'flannel', tag: '{{ flannel_version }}' }
   run_once: ture
 
-- name: replace pod cidr 10.244.0.0/16 in flannel yaml files
+- name: replace pod cird 10.244.0.0/16 in flannel yaml files
   replace:
     dest: "{{ item.filename }}"
     regexp: "10.244.0.0/16"
-    replace: "{{ pod_cidr }}"
+    replace: "{{ pod_cird }}"
   with_items:
     - { filename: "{{ dpath }}/flannel/kube-flannel.yml" }
   run_once: true

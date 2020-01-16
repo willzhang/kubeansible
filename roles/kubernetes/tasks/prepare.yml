@@ -17,6 +17,9 @@
     - swap
     - none
 
+- name: Turn swap off
+  shell: swapoff -a
+
 - name: load ipvs
   shell: |
     modprobe ip_vs

@@ -4,14 +4,22 @@
   register: kubelet_conf_stat
 
 - block:
-  - include_tasks: prepare.yml
+  - name: prepare job
+    include_tasks: prepare.yml
 
-  - include_tasks: master-init.yml
+  - include_tasks: generate-certificates.yml
     when: 
     - inventory_hostname == groups['master'][0]
 
-  - include_tasks: join-nodes.yml
-        
+  - include_tasks: master-init.yml
+    when: inventory_hostname == groups['master'][0]
+
+  - include_tasks: master-join.yml
+    when: (inventory_hostname not in groups['master'][0]) and (inventory_hostname not in groups['node'])
+
+  - include_tasks: worker-join.yml
+    when: inventory_hostname in groups['node']
+ 
   - include_tasks: calico.yml
     when: (inventory_hostname == groups['master'][0]) and (network_plugin == 'calico')
 

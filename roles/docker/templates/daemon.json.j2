@@ -7,7 +7,7 @@
     "max-size": "100m",
     "max-file": "5"
   },
-{% if enable_insecure_registry %}
+{% if insecure_registry %}
   "insecure-registries": [
       "{{ insecure_registry }}"
   ],

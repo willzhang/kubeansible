@@ -3,6 +3,10 @@
     name: '{{ inventory_hostname }}'
   when: format_hostname
 
+- name: set timezone
+  shell: timedatectl set-timezone {{ timezone }}
+  when: timezone is defined
+
 - name: disabled selinux
   selinux:
     state: disabled

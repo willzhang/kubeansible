@@ -1,132 +1,9 @@
-- name: install git command for helm-push and perl library for ipcalc
-  yum:
-    disablerepo: '*'
-    enablerepo: kubeansible
-    update_cache: true
-    state: present
-    name: git
-
-- name: generate kubeadm bootstrap-token
-  shell: kubeadm token generate
-  register: bootstrap_token
-  run_once: true
-
-- name: generate kubeadm.conf file
-  template:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: 'kubeadm.conf.j2', dest: '{{ dpath }}/kubernetes/kubeadm.conf' }
-
-- name: copy certificates JSON files
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: 'ca-csr.json', dest: '{{ dpath }}/kubernetes/' }
-  - { src: 'ca-config.json', dest: '{{ dpath }}/kubernetes/' }
-  - { src: 'apiserver-csr.json', dest: '{{ dpath }}/kubernetes/' }
-  - { src: 'kubelet-csr.json', dest: '{{ dpath }}/kubernetes/' }
-  - { src: 'front-proxy-ca-csr.json', dest: '{{ dpath }}/kubernetes/' }
-  - { src: 'front-proxy-client-csr.json', dest: '{{ dpath }}/kubernetes/' }
-
-- name: copy ipcalc tool
-  copy:
-    src: '{{ base_dir }}/bin/ipcalc'
-    dest: /usr/local/bin
-    mode: '0755'
-
-- name: make a link for ipcalc
-  shell: |
-    rm -f /usr/local/bin/ipcalc
-    ln -s /usr/local/bin/ipcalc-0.41/ipcalc /usr/local/bin/ipcalc
-
-- name: generate other kubernetes certificates
-  shell: "cfssl gencert -initca ca-csr.json | cfssljson -bare ca && \
-    cfssl gencert -ca=ca.pem -ca-key=ca-key.pem -config=ca-config.json \
-    -profile=kubernetes kubelet-csr.json | cfssljson -bare apiserver-kubelet-client && \
-    cfssl gencert -initca front-proxy-ca-csr.json | cfssljson -bare front-proxy-ca && \
-    cfssl gencert -ca=front-proxy-ca.pem -ca-key=front-proxy-ca-key.pem -config=ca-config.json \
-    -profile=kubernetes front-proxy-client-csr.json | cfssljson -bare front-proxy-client && \
-    openssl genrsa -out sa.key 2048 && \
-    openssl rsa -in sa.key -pubout -out sa.pub"
-  args:
-    chdir: '{{ dpath }}/kubernetes/'
-    creates: '/etc/kubernetes/pki/*.key'
-  run_once: true
-
-- name: mv other kubernetes certificates
-  shell: |
-    mv ca.pem /etc/kubernetes/pki/ca.crt
-    mv ca-key.pem /etc/kubernetes/pki/ca.key
-    mv apiserver-kubelet-client.pem /etc/kubernetes/pki/apiserver-kubelet-client.crt
-    mv apiserver-kubelet-client-key.pem /etc/kubernetes/pki/apiserver-kubelet-client.key
-    mv front-proxy-ca.pem /etc/kubernetes/pki/front-proxy-ca.crt
-    mv front-proxy-ca-key.pem /etc/kubernetes/pki/front-proxy-ca.key
-    mv front-proxy-client.pem /etc/kubernetes/pki/front-proxy-client.crt
-    mv front-proxy-client-key.pem /etc/kubernetes/pki/front-proxy-client.key
-    mv sa.pub /etc/kubernetes/pki/sa.pub
-    mv sa.key /etc/kubernetes/pki/sa.key
-  args:
-    chdir: '{{ dpath }}/kubernetes/'
-    creates: '/etc/kubernetes/pki/*.key'
-  run_once: true
-
-- name: fetch certificates
-  fetch:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-    flat: true
-  with_items:
-  - { src: '/etc/kubernetes/pki/ca.crt', dest: 'files/ca.crt' }
-  - { src: '/etc/kubernetes/pki/ca.key', dest: 'files/ca.key' }
-  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.crt', dest: 'files/apiserver-kubelet-client.crt' }
-  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.key', dest: 'files/apiserver-kubelet-client.key' }
-  - { src: '/etc/kubernetes/pki/front-proxy-ca.crt', dest: 'files/front-proxy-ca.crt' }
-  - { src: '/etc/kubernetes/pki/front-proxy-ca.key', dest: 'files/front-proxy-ca.key' }
-  - { src: '/etc/kubernetes/pki/front-proxy-client.crt', dest: 'files/front-proxy-client.crt' }
-  - { src: '/etc/kubernetes/pki/front-proxy-client.key', dest: 'files/front-proxy-client.key' }
-  - { src: '/etc/kubernetes/pki/sa.pub', dest: 'files/sa.pub' }
-  - { src: '/etc/kubernetes/pki/sa.key', dest: 'files/sa.key' }
-  run_once: true
-
-- name: copy certificates
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-  with_items:
-  - { src: 'files/ca.crt', dest: '/etc/kubernetes/pki/ca.crt' }
-  - { src: 'files/ca.key', dest: '/etc/kubernetes/pki/ca.key' }
-  - { src: 'files/apiserver-kubelet-client.crt', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.crt' }
-  - { src: 'files/apiserver-kubelet-client.key', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.key' }
-  - { src: 'files/front-proxy-ca.crt', dest: '/etc/kubernetes/pki/front-proxy-ca.crt' }
-  - { src: 'files/front-proxy-ca.key', dest: '/etc/kubernetes/pki/front-proxy-ca.key' }
-  - { src: 'files/front-proxy-client.crt', dest: '/etc/kubernetes/pki/front-proxy-client.crt' }
-  - { src: 'files/front-proxy-client.key', dest: '/etc/kubernetes/pki/front-proxy-client.key' }
-  - { src: 'files/sa.pub', dest: '/etc/kubernetes/pki/sa.pub' }
-  - { src: 'files/sa.key', dest: '/etc/kubernetes/pki/sa.key' }
-
-- name: get apiserver-ip for certSANS
-  shell: ipcalc ${service_cidr} |grep HostMin |awk '{print $2}'
-  register: apiserve_ip
-  run_once: true
-
-- name: generate kube-apiserver certificates
-  shell: "\
-    cfssl gencert -ca=/etc/kubernetes/pki/ca.crt -ca-key=/etc/kubernetes/pki/ca.key -config=ca-config.json \
-    -hostname=127.0.0.1,$apiserver_ip,{{ ansible_ssh_host }},{{ endpoint.split(':')[0] }},{{ inventory_hostname }}, \
-    kubernetes,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster.local \
-    -profile=kubernetes apiserver-csr.json | cfssljson -bare apiserver"
-  args:
-    chdir: '{{ dpath }}/kubernetes/'
-    creates: '/etc/kubernetes/pki/*.key'
-  run_once: true
-
 - name: kubeadm init
   shell: |
     kubeadm init --config kubeadm.conf --upload-certs
   args:
     chdir: '{{ dpath }}/kubernetes/'
+  register: kubeadm_init_result
 
 - name: config kubectl
   shell: |
@@ -138,4 +15,20 @@
     kubectl -n kube-system get cm kube-proxy -o yaml > {{ dpath }}/kubernetes/kube-proxy-cm.yaml
     sed -i "s#.*server:.*#        server: https://{{ endpoint }}#g" {{ dpath }}/kubernetes/kube-proxy-cm.yaml
     kubectl -n kube-system apply -f {{ dpath }}/kubernetes/kube-proxy-cm.yaml
-  run_once: true
+
+- name: Store kubeadm_init_result
+  action: copy content="{{ kubeadm_init_result.stdout }}" dest="{{ dpath }}/kubernetes/kubeadm_init_result"
+
+- name: save join command
+  shell: |
+    cat {{ dpath }}/kubernetes/kubeadm_init_result | grep '\-\-control-plane' -B2 > {{ dpath }}/kubernetes/kubeadm-join-master.command
+    cat {{ dpath }}/kubernetes/kubeadm_init_result | tail -n2 > {{ dpath }}/kubernetes/kubeadm-join-worker.command
+
+- name: fetch join command
+  fetch:
+    src: '{{ item.src }}'
+    dest: '{{ item.dest }}'
+    flat: true
+  with_items:
+  - { src: '{{ dpath }}/kubernetes/kubeadm-join-master.command', dest: 'files/kubeadm-join-master.command' }
+  - { src: '{{ dpath }}/kubernetes/kubeadm-join-worker.command', dest: 'files/kubeadm-join-worker.command' }

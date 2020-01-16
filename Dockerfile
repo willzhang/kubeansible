@@ -1,9 +1,13 @@
-ARGS kubernetes_version=v1.17.0
+FROM willdockerhub/nginx:ansible
 
-FROM willdockerhub/kubepackage:${kubernetes_version} as builder
+WORKDIR /data/
 
-FROM cytopia/ansible:latest-tools
+COPY scripts/packages /data/
 
-RUN git clone https://github.com/willzhang/kubeansible.git
+COPY * /data/kubeansible
 
-COPY FROM builder:/data/packages .
+RUN git cone https://github.com/willzhang/kubeansible.git --depth=1
+
+COPY rpms /usr/share/nginx/html/rpms
+COPY yum-repo/index.html /usr/share/nginx/html
+COPY yum-repo/nginx.conf /etc/nginx/conf.d/default.conf

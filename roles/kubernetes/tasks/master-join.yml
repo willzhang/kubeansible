@@ -1,0 +1,2 @@
+- name: run join master command
+  script: files/kubeadm-join-master.command

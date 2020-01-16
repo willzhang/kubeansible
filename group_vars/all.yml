@@ -1,6 +1,10 @@
 base_dir: /data/packages
 dpath: /var/lib/kubeansible
 
+
+#role docker
+timezone: Asia/Shanghai
+
 docker_version: 18.09.9
 haproxy_version: 2.1.0-alpine
 lb_kube_apiserver_port: 8443

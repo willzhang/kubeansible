@@ -1,6 +1,5 @@
 #!/bin/bash
 
-echo "pwd:${PWD}"
 KUBE_VERSION=1.17.0
 DOCKER_VERSION=18.09.9-3
 

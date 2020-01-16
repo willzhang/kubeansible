@@ -17,6 +17,6 @@ do
 done
 
 docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo centos:7.7.1908 \
-  bash -c"
+  bash -c "
   yum  install -y createrepo &&
   createrepo /rpms"

@@ -1,31 +1,20 @@
-- name: make script dir
-  file:
-    path: '{{ DPATH }}'
-    state: directory
+- name: gen ssh_keypair
+  openssh_keypair:
+    path: /root/.ssh/id_rsa
+    size: 2048
+    type: rsa
   connection: local
   run_once: true
 
-- name: distribute the script to host
-  copy:
-    src: '{{ item.src }}'
-    dest: '{{ item.dest }}'
-    mode: 0755
-  with_items:
-    - { src: 'gen-rsa.sh', dest: '{{ DPATH }}' }
-    - { src: 'get-public-key.sh', dest: '{{ DPATH }}' }
-  connection: local
-  run_once: true
-
-- name: generate rsa and rsa.pub
-  shell: '{{ DPATH }}/gen-rsa.sh'
-  connection: local
-  run_once: true
-
-- name: get public key
-  shell: '{{ DPATH }}/get-public-key.sh {{ inventory_hostname }}'
+- name: ssh-keyscan command
+  known_hosts:
+    name: "{{ ansible_ssh_host }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ecdsa-sha2-nistp256 {{ ansible_ssh_host }}') }}"
   connection: local
 
 - name: install ssh key
+  vars:
+    ansible_python_interpreter: /usr/bin/python
   authorized_key: user=root
-                  key="{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-                  state=present
+                 key="{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+                 state=present

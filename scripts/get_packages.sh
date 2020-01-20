@@ -65,7 +65,7 @@ function get_flannel(){
        | sed -e "s#quay.io/coreos#{{ registry_endpoint }}/{{ registry_project }}#g" > ${base_dir}/images/flannel/kube-flannel.yml.j2
   docker pull quay.io/coreos/flannel:${flannel_version}-amd64
   docker save quay.io/coreos/flannel:${flannel_version}-amd64 > ${base_dir}/images/flannel/flannel.tar
-  bzip2 -z --best ${base_dir}/flannel/images/flannel.tar
+  bzip2 -z --best ${base_dir}/flannel/flannel.tar
 }
 
 

@@ -189,7 +189,7 @@ spec:
         args:
         - --ip-masq
         - --kube-subnet-mgr
-{{% if flannel_ifcace %}}
+{% if flannel_ifcace is defined %}
         - --iface={{ flannel_ifcace }}
 {% endif %}
         resources:

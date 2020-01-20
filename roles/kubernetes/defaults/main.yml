@@ -12,7 +12,7 @@ pause_version: 3.1
 flannel_repo: quay.io/coreos
 flannel_version: v0.11.0-amd64
 flannel_version_short: v0.11.0
-flannel_ifcace=eth1
+#flannel_ifcace: eth1
 calico_version: v3.10.3
 
 #or calico

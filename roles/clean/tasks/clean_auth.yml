@@ -1,5 +1,9 @@
 - name: clear auth
-  shell: |
-    sed -i '/{{ inventory_hostname }}[] ,]/d' /root/.ssh/known_hosts
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  lineinfile:
+    path: /root/.ssh/known_hosts
+    state: absent
+    regexp: '{{ hostvars[inventory_hostname].ansible_ssh_host }}'
   connection: local
   when: "inventory_hostname in groups['allnodes']"

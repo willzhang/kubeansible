@@ -1,8 +1,11 @@
 - name: create harbor dir
   file:
-    path: /data
+    path: '{{ item }}'
     state: directory
     mode: 0755
+  with_items:
+    - '/data/'
+    - '{{ dpath }}'
 
 - name: Check if harbor is installed
   command: ls /data
@@ -17,16 +20,16 @@
 
   - name: unarchive harbor
     unarchive:
-      src: '{{ base_dir }}/file/harbor-offline-installer-{{ harbor_version }}.tgz'
-      dest: /data
+      src: '{{ base_dir }}/files/harbor-offline-installer-{{ harbor_version }}.tgz'
+      dest: '{{ dpath }}'
   
   - name: generate harbor config
     template:
       src: harbor.yml.j2
-      dest: /data/harbor/harbor.yml
+      dest: '{{ dpath }}/harbor/harbor.yml'
   
   - name: launch harbor
     shell: ./install.sh --with-clair --with-chartmuseum
     args:
-      chdir: /data/harbor
+      chdir: '{{ dpath }}/harbor'
   when: '"registry" not in result.stdout'

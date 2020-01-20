@@ -25,20 +25,9 @@
     - kubeadm-{{ kubernetes_version[1:] }}
     when: (ansible_distribution =="RedHat") or (ansible_distribution =="CentOS")
 
-  - name: remove kubernetes components for Ubuntu
-    apt:
-      state: absent
-      name: '{{ item }}'
-    with_items:
-    - kubernetes-cni
-    - kubectl-{{ kubernetes_version[1:] }}
-    - kubelet-{{ kubernetes_version[1:] }}
-    - kubeadm-{{ kubernetes_version[1:] }}
-    when: ansible_distribution =="Ubuntu"
-
   - name: clean flannel link
     shell: |
       ip link delete cni0
       ip link delete flannel.1
     ignore_errors: true
-  when: (inventory_hostname in groups["master"]) or (inventory_hostname in groups['node'])
+  when: inventory_hostname in groups["cluster"]

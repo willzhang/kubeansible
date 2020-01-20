@@ -1,4 +1,6 @@
 - name: gen ssh_keypair
+  vars:                                        
+    ansible_python_interpreter: /usr/bin/python3
   openssh_keypair:
     path: /root/.ssh/id_rsa
     size: 2048
@@ -7,6 +9,8 @@
   run_once: true
 
 - name: ssh-keyscan command
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
   known_hosts:
     name: "{{ ansible_ssh_host }}"
     key: "{{ lookup('pipe', 'ssh-keyscan -t ecdsa-sha2-nistp256 {{ ansible_ssh_host }}') }}"
@@ -15,6 +19,7 @@
 - name: install ssh key
   vars:
     ansible_python_interpreter: /usr/bin/python
-  authorized_key: user=root
-                 key="{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
-                 state=present
+  authorized_key: 
+    user: root
+    key: "{{ lookup('file', '/root/.ssh/id_rsa.pub') }}"
+    state: present

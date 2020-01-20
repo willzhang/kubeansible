@@ -31,8 +31,8 @@
   - { src: 'front-proxy-client-csr.json', dest: '{{ dpath }}/kubernetes/' }
 
 - name: unachive ipcalc tool
-  unachive: 
-    src: {{ base_dir }}/files/ipcalc-{{ ipcalc-version }}.tgz
+  unarchive: 
+    src: '{{ base_dir }}/files/ipcalc-{{ ipcalc_version }}.tar.gz'
     dest: /usr/local/bin/
 
 - name: make a link for ipcalc
@@ -77,16 +77,16 @@
     dest: '{{ item.dest }}'
     flat: true
   with_items:
-  - { src: '/etc/kubernetes/pki/ca.crt', dest: 'files/ca.crt' }
-  - { src: '/etc/kubernetes/pki/ca.key', dest: 'files/ca.key' }
-  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.crt', dest: 'files/apiserver-kubelet-client.crt' }
-  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.key', dest: 'files/apiserver-kubelet-client.key' }
-  - { src: '/etc/kubernetes/pki/front-proxy-ca.crt', dest: 'files/front-proxy-ca.crt' }
-  - { src: '/etc/kubernetes/pki/front-proxy-ca.key', dest: 'files/front-proxy-ca.key' }
-  - { src: '/etc/kubernetes/pki/front-proxy-client.crt', dest: 'files/front-proxy-client.crt' }
-  - { src: '/etc/kubernetes/pki/front-proxy-client.key', dest: 'files/front-proxy-client.key' }
-  - { src: '/etc/kubernetes/pki/sa.pub', dest: 'files/sa.pub' }
-  - { src: '/etc/kubernetes/pki/sa.key', dest: 'files/sa.key' }
+  - { src: '/etc/kubernetes/pki/ca.crt', dest: '{{ base_dir }}/kubernetes/ca.crt' }
+  - { src: '/etc/kubernetes/pki/ca.key', dest: '{{ base_dir }}/kubernetes/ca.key' }
+  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.crt', dest: '{{ base_dir }}/kubernetes/apiserver-kubelet-client.crt' }
+  - { src: '/etc/kubernetes/pki/apiserver-kubelet-client.key', dest: '{{ base_dir }}/kubernetes/apiserver-kubelet-client.key' }
+  - { src: '/etc/kubernetes/pki/front-proxy-ca.crt', dest: '{{ base_dir }}/kubernetes/front-proxy-ca.crt' }
+  - { src: '/etc/kubernetes/pki/front-proxy-ca.key', dest: '{{ base_dir }}/kubernetes/front-proxy-ca.key' }
+  - { src: '/etc/kubernetes/pki/front-proxy-client.crt', dest: '{{ base_dir }}/kubernetes/front-proxy-client.crt' }
+  - { src: '/etc/kubernetes/pki/front-proxy-client.key', dest: '{{ base_dir }}/kubernetes/front-proxy-client.key' }
+  - { src: '/etc/kubernetes/pki/sa.pub', dest: '{{ base_dir }}/kubernetes/sa.pub' }
+  - { src: '/etc/kubernetes/pki/sa.key', dest: '{{ base_dir }}/kubernetes/sa.key' }
   run_once: true
 
 - name: copy certificates
@@ -94,16 +94,16 @@
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: 'files/ca.crt', dest: '/etc/kubernetes/pki/ca.crt' }
-  - { src: 'files/ca.key', dest: '/etc/kubernetes/pki/ca.key' }
-  - { src: 'files/apiserver-kubelet-client.crt', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.crt' }
-  - { src: 'files/apiserver-kubelet-client.key', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.key' }
-  - { src: 'files/front-proxy-ca.crt', dest: '/etc/kubernetes/pki/front-proxy-ca.crt' }
-  - { src: 'files/front-proxy-ca.key', dest: '/etc/kubernetes/pki/front-proxy-ca.key' }
-  - { src: 'files/front-proxy-client.crt', dest: '/etc/kubernetes/pki/front-proxy-client.crt' }
-  - { src: 'files/front-proxy-client.key', dest: '/etc/kubernetes/pki/front-proxy-client.key' }
-  - { src: 'files/sa.pub', dest: '/etc/kubernetes/pki/sa.pub' }
-  - { src: 'files/sa.key', dest: '/etc/kubernetes/pki/sa.key' }
+  - { src: '{{ base_dir }}/kubernetes/ca.crt', dest: '/etc/kubernetes/pki/ca.crt' }
+  - { src: '{{ base_dir }}/kubernetes/ca.key', dest: '/etc/kubernetes/pki/ca.key' }
+  - { src: '{{ base_dir }}/kubernetes/apiserver-kubelet-client.crt', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.crt' }
+  - { src: '{{ base_dir }}/kubernetes/apiserver-kubelet-client.key', dest: '/etc/kubernetes/pki/apiserver-kubelet-client.key' }
+  - { src: '{{ base_dir }}/kubernetes/front-proxy-ca.crt', dest: '/etc/kubernetes/pki/front-proxy-ca.crt' }
+  - { src: '{{ base_dir }}/kubernetes/front-proxy-ca.key', dest: '/etc/kubernetes/pki/front-proxy-ca.key' }
+  - { src: '{{ base_dir }}/kubernetes/front-proxy-client.crt', dest: '/etc/kubernetes/pki/front-proxy-client.crt' }
+  - { src: '{{ base_dir }}/kubernetes/front-proxy-client.key', dest: '/etc/kubernetes/pki/front-proxy-client.key' }
+  - { src: '{{ base_dir }}/kubernetes/sa.pub', dest: '/etc/kubernetes/pki/sa.pub' }
+  - { src: '{{ base_dir }}/kubernetes/sa.key', dest: '/etc/kubernetes/pki/sa.key' }
 
 - name: get apiserver-ip for certSANS
   shell: ipcalc ${service_cidr} |grep HostMin |awk '{print $2}'

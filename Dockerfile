@@ -1,6 +1,7 @@
 FROM willdockerhub/nginx:ansible
 
-WORKDIR /data/
+WORKDIR /data/kubeansible
+VOLUME /data
 
 COPY ./scripts/packages /data/packages
 

@@ -1,4 +1,4 @@
 - hosts: 
-  - lb
+  - cluster
   roles:
-  - role: loadbalancer
+    - loadbalancer

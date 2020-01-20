@@ -1,8 +1,13 @@
-#是否修改主机名
+# change hostname
 format_hostname: true
 
-#是否添加insecure_registry参数
-insecure_registry: 172.16.40.16
+docker_yum_repo: http://kubeansible:2009/rpms 
 
-#yum服务器别名
-kubeansible_seed_host: kubeansible
+#docker_yum_repo: https://mirrors.aliyun.com/docker-ce/linux/centos/7/$basearch/stable
+
+# docker mirror
+docker_mirror: 
+  - "https://dockerhub.azk8s.cn"
+
+docker_insecure_registries:
+  - "172.16.40.16"

@@ -13,15 +13,19 @@
     enabled: true
     state: started
 
-- name: config firewalld
+- name: config firewalld trusted all
   shell: |
     firewall-cmd --set-default-zone=trusted
     firewall-cmd --complete-reload
 
 - name: distribute yum repo
-  template:
-    src: kubeansible.repo.j2
-    dest: /etc/yum.repos.d/kubeansible.repo
+  yum_repository:
+    name: kubeansible
+    description: kubeansible Repository
+    baseurl: "{{ docker_yum_repo }}"
+    enabled: yes
+    gpgcheck: no
+    state: present
 
 - name: distribute chrony server config for Redhat/CentOS
   template:
@@ -52,8 +56,8 @@
 - name: add yum repo seed host to /etc/hosts
   blockinfile:
     path: /etc/hosts
-    block: '{{ ip.stdout }} {{ kubeansible_seed_host }}'
-    marker: '# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK {{ kubeansible_seed_host }}'
+    block: '{{ ip.stdout }} kubeansible'
+    marker: '# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK kubeansible'
 
 - name: update /etc/hosts file
   become: true

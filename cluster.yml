@@ -16,7 +16,7 @@
 - hosts: 
   - lb
   roles:
-  - role: loadbalancer
+    - cluster
 - hosts: etcd
   gather_facts: no
   roles:

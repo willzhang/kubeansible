@@ -1,3 +1,14 @@
+- name: create /etc/docker folder
+  file:        
+    path: /etc/docker
+    state: directory
+    mode: '0755'
+
+- name: distribute docker config 
+  template:                      
+    src: daemon.json.j2          
+    dest: /etc/docker/daemon.json
+
 - name: yum install docker
   yum:
     disablerepo: '*'
@@ -13,16 +24,6 @@
       - ipvsadm
       - graphviz
     state: present
-
-- name: init docker to create folder /etc/docker
-  systemd:
-    name: docker
-    state: started
-
-- name: distribute docker config
-  template:
-    src: daemon.json.j2
-    dest: /etc/docker/daemon.json
 
 - name: reload & restart docker
   systemd:

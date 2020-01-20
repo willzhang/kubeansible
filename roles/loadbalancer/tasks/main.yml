@@ -11,7 +11,7 @@
 
 - name: copy lb images
   copy:
-    src: '{{ base_dir }}/image/haproxy-{{ haproxy_version }}.tar.bz2'
+    src: '{{ base_dir }}/images/haproxy-{{ haproxy_version }}.tar.bz2'
     dest: '{{ dpath }}/loadbalancer'
 
 - name: load lb image
@@ -48,6 +48,12 @@
   with_items:
     - { repo: 'docker.io', name: 'haproxy', tag: '{{ haproxy_version }}' }
   run_once: ture
+
+- name: add lb dns to /etc/hosts
+  blockinfile:
+    path: /etc/hosts
+    block: '127.0.0.1 server.k8s.local'
+    marker: '# {mark} lb'
 
 - name: run lb
   docker_container:

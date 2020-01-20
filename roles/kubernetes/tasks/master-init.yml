@@ -30,5 +30,5 @@
     dest: '{{ item.dest }}'
     flat: true
   with_items:
-  - { src: '{{ dpath }}/kubernetes/kubeadm-join-master.command', dest: 'files/kubeadm-join-master.command' }
-  - { src: '{{ dpath }}/kubernetes/kubeadm-join-worker.command', dest: 'files/kubeadm-join-worker.command' }
+  - { src: '{{ dpath }}/kubernetes/kubeadm-join-master.command', dest: '{{ base_dir }}/kubernetes/kubeadm-join-master.command' }
+  - { src: '{{ dpath }}/kubernetes/kubeadm-join-worker.command', dest: '{{ base_dir }}/kubernetes/kubeadm-join-worker.command' }

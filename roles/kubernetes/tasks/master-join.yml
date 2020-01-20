@@ -1,2 +1,2 @@
 - name: run join master command
-  script: files/kubeadm-join-master.command
+  script: '{{ base_dir }}/kubernetes/kubeadm-join-master.command'

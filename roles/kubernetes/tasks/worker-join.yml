@@ -1,2 +1,2 @@
 - name: run join worker command
-  script: files/kubeadm-join-worker.command
+  script: '{{ base_dir }}/kubernetes/kubeadm-join-worker.command'

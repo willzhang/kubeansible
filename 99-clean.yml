@@ -4,7 +4,7 @@
     CLEAN_ETCD: "no"
     CLEAN_LOADBALANCER: "no" 
     CLEAN_HARBOR: "no"
-    CLEAN_DOCKER: "no"
+    CLEAN_DOCKER: "yes"
     CLEAN_AUTH: "yes"
   roles:
   - clean

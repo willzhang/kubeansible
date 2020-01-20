@@ -1,11 +1,9 @@
 - name: remove docker for Redhat/CentOS
   yum:
     disablerepo: '*'
-    enablerepo: wise2c
+    enablerepo: kubeansible
     state: absent
-    name: '{{ item }}'
-  with_items:
-  - docker-ce
-  - docker-compose
+    name:
+      - docker-ce
   when: "inventory_hostname in groups['allnodes']"
 

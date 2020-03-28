@@ -15,14 +15,9 @@
     enablerepo: kubeansible
     update_cache: true
     name:
-      - rsync
-      - jq
       - docker-ce
-      - python-docker-py
-      - docker-compose
       - chrony
       - ipvsadm
-      - graphviz
     state: present
 
 - name: reload & restart docker

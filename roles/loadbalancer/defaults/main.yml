@@ -1,2 +1,2 @@
-haproxy_version: 2.1.0-alpine
+haproxy_version: alpine
 lb_kube_apiserver_port: '8443'

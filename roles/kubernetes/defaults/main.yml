@@ -18,10 +18,6 @@ calico_version: v3.10.3
 #or calico
 network_plugin: "flannel"
 
-calico_typha_replicas: 3
-#or IPIP_Tunnel
-calico_mode: BGP
-calico_node_ip_detection_mode: can-reach=172.16.40.11
+#muti interface choose one for calico
+#calico_node_ip_detection_mode: eth1
 
-#or 50_nodes_or_less
-calico_nodes: More_than_50_nodes

@@ -1,83 +1,18 @@
-- name: copy calico folder
+- name: copy calico.yaml and images
   copy:
     src: '{{ item.src }}'
     dest: '{{ item.dest }}'
   with_items:
-  - { src: '{{ base_dir }}/images/calico', dest: '{{ dpath }}/' }
+  - { src: '{{ base_dir }}/images/calico.tar.bz2', dest: '{{ dpath }}/' }
+  - { src: '{{ base_dir }}/conf/calico.yaml', dest: '{{ dpath }}/' }
   run_once: true
 
 - name: load calico images
   docker_image:
-    load_path: '{{ dpath }}/{{ item }}'
-    name: k8s
+    load_path: '{{ dpath }}/calico.tar.bz2'
+    name: calico
     timeout: 600
     source: load
-  with_items:
-  - calico/images/calico-cni.tar.bz2
-  - calico/images/calico-kube-controllers.tar.bz2
-  - calico/images/calico-node.tar.bz2
-  - calico/images/calico-typha.tar.bz2
-  - calico/images/calico-pod2daemon-flexvol.tar.bz2
-  - calico/images/calico-ctl.tar.bz2
-  run_once: true
-
-- name: docker login
-  docker_login:
-    registry: '{{ registry_endpoint }}'
-    username: '{{ registry_user }}'
-    password: '{{ registry_password }}'
-    reauthorize: true
-  run_once: true
-
-- name: tag calico images and push images
-  docker_image:
-    name: '{{ item.repo }}/{{ item.name }}'
-    repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-    push: yes
-    source: local
-  with_items:
-  - { repo: 'calico', name: 'cni', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'kube-controllers', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'node', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'typha', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'pod2daemon-flexvol', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'ctl', tag: '{{ calico_version }}' }
-  run_once: true
-
-- name: Remove original images tag
-  docker_image:
-    state: absent
-    name: '{{ item.repo }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-  with_items:
-  - { repo: 'calico', name: 'cni', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'kube-controllers', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'node', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'typha', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'pod2daemon-flexvol', tag: '{{ calico_version }}' }
-  - { repo: 'calico', name: 'ctl', tag: '{{ calico_version }}' }
-  run_once: ture
-
-- name: replace image repo in calico yaml files
-  replace:
-    dest: "{{ item.filename }}"
-    regexp: "image: calico/"
-    replace: "image: {{ registry_endpoint }}/{{ registry_project }}/"
-  with_items:
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
-    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calicoctl.yaml" }
-  run_once: true
-
-- name: replace image repo in canal yaml files
-  replace:
-    dest: "{{ item.filename }}"
-    regexp: "image: quay.io/coreos/flannel:{{ flannel_version_short }}"
-    replace: "image: {{ registry_endpoint }}/{{ registry_project }}/flannel:{{ flannel_version }}"
-  with_items:
-    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
   run_once: true
 
 - name: replace pod cidr in calico yaml files
@@ -86,28 +21,7 @@
     regexp: "192.168.0.0/16"
     replace: "{{ pod_cidr }}"
   with_items:
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
-  run_once: true
-
-- name: replace pod cidr 10.244.0.0/16 in canal yaml files
-  replace:
-    dest: "{{ item.filename }}"
-    regexp: "10.244.0.0/16"
-    replace: "{{ pod_cidr }}"
-  with_items:
-    - { filename: "{{ dpath }}/calico/k8s-manifests/canal.yaml" }
-  run_once: true
-
-- name: replace calico_mode in calico yaml files
-  replace:
-    dest: "{{ item.filename }}"
-    regexp: "value: \"Always\""
-    replace: "value: \"Never\""
-  with_items:
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico.yaml" }
-    - { filename: "{{ dpath }}/calico/k8s-manifests/calico-typha.yaml" }
-  when: calico_mode == 'BGP'
+    - { filename: "{{ dpath }}/calico.yaml" }
   run_once: true
 
 - name: add calico_node_ip_detection_mode in calico yaml files
@@ -116,26 +30,11 @@
     regexp: '- name: FELIX_HEALTHENABLED[\S\s]*?value: "true"'
     replace: '- name: FELIX_HEALTHENABLED\n              value: "true"\n            - name: IP_AUTODETECTION_METHOD\n              value: {{ calico_node_ip_detection_mode }}'
   with_items:
-  - { filename: '{{ dpath }}/calico/k8s-manifests/calico.yaml' }
-  - { filename: '{{ dpath }}/calico/k8s-manifests/calico-typha.yaml' }
+  - { filename: '{{ dpath }}/calico.yaml' }
   run_once: true
-
-- name: apply calico cni for cluster with more than 50 nodes
-  shell: |
-    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calico-typha.yaml
-    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calicoctl.yaml
-  run_once: true
-  when: calico_nodes == 'More_than_50_nodes'
-
-- name: apply calico cni for cluster with 50 nodes or less
-  shell: |
-    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calico.yaml
-    kubectl apply -f {{ dpath }}/calico/k8s-manifests/calicoctl.yaml
-  run_once: true
-  when: calico_nodes == '50_nodes_or_less'
-
-- name: scale calico-typha replicas
-  shell: |
-    kubectl -n kube-system scale deployment calico-typha --replicas={{ calico_typha_replicas }}
-  run_once: true
-  when: calico_nodes == 'More_than_50_nodes'
+  when: calico_node_ip_detection_mode
+  
+- name: Create calico cni
+  k8s:
+    state: present
+    src: {{ dpath }}/calico/k8s-manifests/calico.yaml

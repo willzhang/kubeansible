@@ -1,13 +1,13 @@
 #!/bin/bash
 
 path=`dirname $0`
-mkdir -p ${path}/packages/{bin,images,files}
+mkdir -p ${path}/packages/{bin,images,files,conf}
 base_dir=${path}/packages
 
 
 harbor_version=v1.9.4
 docker_compose_version=1.24.1
-haproxy_version=2.1.0-alpine
+haproxy_version=alpine
 etcd_version=3.4.3-0
 kubernetes_version=1.17.0
 flannel_version=v0.11.0
@@ -60,31 +60,13 @@ function get_kubernetes(){
 
 
 function get_flannel(){
-  mkdir -p ${base_dir}/images/flannel/
-  curl -sSL https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml \
-       | sed -e "s#quay.io/coreos#{{ registry_endpoint }}/{{ registry_project }}#g" > ${base_dir}/images/flannel/kube-flannel.yml.j2
-  docker pull quay.io/coreos/flannel:${flannel_version}-amd64
-  docker save quay.io/coreos/flannel:${flannel_version}-amd64 > ${base_dir}/images/flannel/flannel.tar
-  bzip2 -z --best ${base_dir}/flannel/flannel.tar
+  curl -o ${base_dir}/conf/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+  docker save $(cat ${base_dir}/conf/kube-flannel.yml | grep "image:" | grep amd64 | awk '{print $2}') | bzip2 -z --best > ${base_dir}/images/kube-flannel.tar.bz2
 }
 
-
 function get_calico(){
-  mkdir -p ${base_dir}/images/calico/
-  curl -L -o ${base_dir}/images/calico/calico-${calico_version}.tgz https://github.com/projectcalico/calico/releases/download/${calico_version}/release-${calico_version}.tgz
-  tar zxf ${base_dir}/images/calico/calico-${calico_version}.tgz -C ${base_dir}/images/calico/ --strip=1
-  rm -rf ${base_dir}/images/calico/calico-${calico_version}.tgz
-  rm -rf ${base_dir}/images/calico/bin
-  docker pull calico/pod2daemon-flexvol:${calico_version}
-  docker save calico/pod2daemon-flexvol:${calico_version} -o ${base_dir}/images/calico/images/calico-pod2daemon-flexvol.tar
-  docker pull calico/ctl:${calico_version}
-  docker save calico/ctl:${calico_version} -o ${base_dir}/images/calico/images/calico-ctl.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-cni.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-kube-controllers.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-node.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-pod2daemon-flexvol.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-typha.tar
-  bzip2 -z --best ${base_dir}/images/calico/images/calico-ctl.tar
+  curl -o ${base_dir}/conf/calico.yaml https://docs.projectcalico.org/${calico_version}/manifests/calico.yaml
+  docker save $(cat ${base_dir}/conf/calico.yaml | grep "image:" | awk '{print $2}') | bzip2 -z --best > ${base_dir}/images/calico.tar.bz2
 }
 
 

@@ -18,34 +18,6 @@
     source: load
   run_once: true
 
-- name: docker login
-  docker_login:
-    registry: '{{ registry_endpoint }}'
-    username: '{{ registry_user }}'
-    password: '{{ registry_password }}'
-    reauthorize: true
-  run_once: true
-
-- name: Tag and push to local registry
-  docker_image:
-    name: '{{ item.repo }}/{{ item.name }}'
-    repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-    push: yes
-    source: local
-  with_items:
-    - { repo: 'k8s.gcr.io', name: 'etcd-amd64', tag: '{{ etcd_version }}' }
-  run_once: true
-
-- name: remove original images tag
-  docker_image:
-    state: absent
-    name: '{{ item.repo }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-  with_items:
-    - { repo: 'k8s.gcr.io', name: 'etcd-amd64', tag: '{{ etcd_version }}' }
-  run_once: ture
-
 - name: make etcd cert dir
   file:
     path: '/etc/etcd/pki'
@@ -112,7 +84,7 @@
     name: etcd
     network_mode: host
     restart_policy: unless-stopped
-    image: "{{ registry_endpoint }}/{{ registry_project }}/etcd-amd64:{{ etcd_version }}"
+    image: "k8s.gcr.io/etcd-amd64:${etcd_version}"
     command: [
         "etcd",
         "{% for host in ansible_play_batch -%}{% if host == inventory_hostname -%}--name etcd{{ loop.index0 }}{% endif -%}{% endfor -%}",

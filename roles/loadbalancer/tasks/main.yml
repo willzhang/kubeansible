@@ -21,34 +21,6 @@
     name: lb
     timeout: 600
 
-- name: docker login
-  docker_login:
-    registry: '{{ registry_endpoint }}'
-    username: '{{ registry_user }}'
-    password: '{{ registry_password }}'
-    reauthorize: true
-  run_once: true
-
-- name: Tag and push to local registry
-  docker_image:
-    name: '{{ item.repo }}/{{ item.name }}'
-    repository: '{{ registry_endpoint }}/{{ registry_project }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-    push: yes
-    source: local
-  with_items:
-    - { repo: 'docker.io', name: 'haproxy', tag: '{{ haproxy_version }}' }
-  run_once: true
-
-- name: remove original images tag
-  docker_image:
-    state: absent
-    name: '{{ item.repo }}/{{ item.name }}'
-    tag: '{{ item.tag }}'
-  with_items:
-    - { repo: 'docker.io', name: 'haproxy', tag: '{{ haproxy_version }}' }
-  run_once: ture
-
 - name: add lb dns to /etc/hosts
   blockinfile:
     path: /etc/hosts
@@ -59,7 +31,7 @@
   docker_container:
     name: haproxy
     restart_policy: unless-stopped
-    image: "{{ registry_endpoint }}/{{ registry_project }}/haproxy:{{ haproxy_version }}"
+    image: "haproxy:{{ haproxy_version }}"
     ports:
      - "{{ lb_kube_apiserver_port }}:6443"
      - "8081:8081"

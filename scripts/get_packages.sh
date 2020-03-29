@@ -1,63 +1,31 @@
 #!/bin/bash
 
 path=`dirname $0`
-mkdir -p ${path}/packages/{bin,images,files,conf}
+mkdir -p ${path}/packages/{bin,images,conf}
 base_dir=${path}/packages
 
-
-harbor_version=v1.9.4
-docker_compose_version=1.24.1
-haproxy_version=alpine
-etcd_version=3.4.3-0
+##########################################################
+docker_version=19.03.8
 kubernetes_version=1.17.0
+haproxy_version=alpine
+#etcd_version=3.4.3-0
 flannel_version=v0.11.0
 calico_version=v3.10.3
 ipcalc_version=0.41
-
-function get_harbor(){
-  curl -L https://github.com/goharbor/harbor/releases/download/${harbor_version}/harbor-offline-installer-${harbor_version}.tgz \
-  -o ${base_dir}/files/harbor-offline-installer-${harbor_version}.tgz
-}
-
-function get_docker_compose(){
-  curl -L https://github.com/docker/compose/releases/download/${docker_compose_version}/docker-compose-$(uname -s)-$(uname -m) -o ${base_dir}/bin/docker-compose
-}
-
+##########################################################
 
 function get_loadbalancer(){
   docker pull haproxy:${haproxy_version}
-  docker save haproxy:${haproxy_version} -o ${base_dir}/images/haproxy-${haproxy_version}.tar
-  bzip2 -z --best ${base_dir}/images/haproxy-${haproxy_version}.tar
+  docker save haproxy:${haproxy_version} | bzip2 -z --best > ${base_dir}/images/haproxy.tar.bz2
 }
-
-
-function get_etcd(){
-  image=k8s.gcr.io/etcd-amd64:${etcd_version}
-  docker pull ${image}
-  docker save ${image} > ${base_dir}/images/etcd.tar
-  bzip2 -z --best ${base_dir}/images/etcd.tar
-}
-
-
-function get_cfssl(){
-  export CFSSL_URL=https://pkg.cfssl.org/R1.2
-  curl -L ${CFSSL_URL}/cfssl_linux-amd64 -o ${base_dir}/bin/cfssl
-  curl -L ${CFSSL_URL}/cfssljson_linux-amd64 -o ${base_dir}/bin/cfssljson
-  curl -L ${CFSSL_URL}/cfssl-certinfo_linux-amd64 -o ${base_dir}/bin/cfssl-certinfo
-  chmod +x ${base_dir}/bin/cfssl*
-}
-
 
 function get_kubernetes(){
-  docker run --rm --name=kubeadm-version wise2c/kubeadm-version:v${kubernetes_version} \
-  kubeadm config images list --kubernetes-version ${kubernetes_version} > ${path}/k8s-images-list.txt
-  for IMAGES in $(cat ${path}/k8s-images-list.txt |grep -v etcd); do
-    docker pull ${IMAGES}
-  done
-  docker save $(cat ${path}/k8s-images-list.txt |grep -v etcd) -o ${base_dir}/images/k8s.tar
-  bzip2 -z --best ${base_dir}/images/k8s.tar
+  curl -LO https://storage.googleapis.com/kubernetes-release/release/${kubernetes_version}/bin/linux/amd64/kubeadm
+  chmod +x kubeadm
+  ./kubeadm config images pull
+  docker save $(./kubeadm config images list | grep -v etcd) | bzip2 -z --best > ${base_dir}/images/k8s.tar.bz2
+  docker save $(./kubeadm config images list | grep etcd) | bzip2 -z --best > ${base_dir}/images/etcd.tar.bz2
 }
-
 
 function get_flannel(){
   curl -o ${base_dir}/conf/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
@@ -69,17 +37,41 @@ function get_calico(){
   docker save $(cat ${base_dir}/conf/calico.yaml | grep "image:" | awk '{print $2}') | bzip2 -z --best > ${base_dir}/images/calico.tar.bz2
 }
 
-
-function get_ipcalc(){
-  curl -L http://jodies.de/ipcalc-archive/ipcalc-${ipcalc_version}.tar.gz -o ${base_dir}/files/ipcalc-${ipcalc_version}.tar.gz
+function get_cfssl_tool(){
+  export CFSSL_URL=https://pkg.cfssl.org/R1.2
+  curl -L ${CFSSL_URL}/cfssl_linux-amd64 -o ${base_dir}/bin/cfssl
+  curl -L ${CFSSL_URL}/cfssljson_linux-amd64 -o ${base_dir}/bin/cfssljson
+  curl -L ${CFSSL_URL}/cfssl-certinfo_linux-amd64 -o ${base_dir}/bin/cfssl-certinfo
 }
 
-get_harbor
-get_docker_compose
+function get_ipcalc(){
+  curl -L http://jodies.de/ipcalc-archive/ipcalc-${ipcalc_version}.tar.gz -o ${base_dir}/images/ipcalc-${ipcalc_version}.tar.gz
+}
+
+function get_yum_repo(){
+  for centos_version in centos:7.5.1804 centos:7.6.1810 centos:7.7.1908
+  do
+    docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${centos_version} \
+    bash -c "
+    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
+    yum install -y yum-utils &&
+    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&
+    mkdir -p /rpms/ &&
+    yum -y install --downloadonly --downloaddir=/rpms docker-ce-${docker_version}.el7.x86_64 docker-ce-cli-${docker_version}.el7.x86_64 containerd.io &&
+    yum -y install --downloadonly --downloaddir=/rpms chrony ipvsadm ipset &&
+    yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
+  done
+
+  docker run -t --rm -v ${PWD}/rpms:/rpms centos:7.7.1908 \
+    bash -c "
+    yum  install -y createrepo &&
+    createrepo /rpms"
+}
+
 get_loadbalancer
-get_etcd
-get_cfssl
 get_kubernetes
 get_flannel
 get_calico
+get_yum_repo
+get_cfssl_tool
 get_ipcalc

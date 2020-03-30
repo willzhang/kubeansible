@@ -70,10 +70,10 @@ function get_yum_repo(){
     createrepo /rpms"
 }
 
-get_loadbalancer
+#get_loadbalancer
 get_kubernetes
-get_flannel
-get_calico
-get_yum_repo
-get_cfssl_tool
-get_ipcalc
+#get_flannel
+#get_calico
+#get_yum_repo
+#get_cfssl_tool
+#get_ipcalc

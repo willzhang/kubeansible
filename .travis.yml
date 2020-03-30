@@ -1,4 +1,5 @@
-sudo: required
+language: shell
+os: linux
 
 services:
 - docker
@@ -10,44 +11,10 @@ before_install:
 
 env:
  global:
-   - docker_version=19.03.5
-   - kubernetes_version=1.17.0
-   - haproxy_version=alpine
-   - flannel_version=v0.11.0
-   - calico_version=v3.10.3
-   - ipcalc_version=0.41
+   - KUBE_VERSION=1.17.0
  
 script:
-  - docker pull haproxy:${haproxy_version}
-  - docker save haproxy:${haproxy_version} | bzip2 -z --best > ${base_dir}/images/haproxy.tar.bz2
-  
-script:
-  - curl -o ${base_dir}/conf/kube-flannel.yml https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
-  - docker save $(cat ${base_dir}/conf/kube-flannel.yml | grep "image:" | grep amd64 | awk '{print $2}') | bzip2 -z --best > ${base_dir}/images/kube-flannel.tar.bz2
-
-script:
-  - curl -o ${base_dir}/conf/calico.yaml https://docs.projectcalico.org/${calico_version}/manifests/calico.yaml
-  - docker save $(cat ${base_dir}/conf/calico.yaml | grep "image:" | awk '{print $2}') | bzip2 -z --best > ${base_dir}/images/calico.tar.bz2
-
-
-script:
-  - export CFSSL_URL=https://pkg.cfssl.org/R1.2
-  - curl -L ${CFSSL_URL}/cfssl_linux-amd64 -o ${base_dir}/bin/cfssl
-  - curl -L ${CFSSL_URL}/cfssljson_linux-amd64 -o ${base_dir}/bin/cfssljson
-  - curl -L ${CFSSL_URL}/cfssl-certinfo_linux-amd64 -o ${base_dir}/bin/cfssl-certinfo
-
-script:
-  - curl -L http://jodies.de/ipcalc-archive/ipcalc-${ipcalc_version}.tar.gz -o ${base_dir}/images/ipcalc-${ipcalc_version}.tar.gz
-
-#download kubernetes
-script:
-  - curl -LO https://storage.googleapis.com/kubernetes-release/release/v${kubernetes_version}/bin/linux/amd64/kubeadm
-  - chmod +x kubeadm
-  - ./kubeadm config images pull --kubernetes-version ${kubernetes_version}
-  - docker save $(./kubeadm config images list --kubernetes-version ${kubernetes_version} | grep -v etcd) | bzip2 -z --best > ${base_dir}/images/k8s.tar.bz2
-  - docker save $(./kubeadm config images list --kubernetes-version ${kubernetes_version} | grep etcd) | bzip2 -z --best > ${base_dir}/images/etcd.tar.bz2
-  
-script:
-  - docker build -t willdockerhub/kubeansible:v$kubernetes_verison .
+  - bash scripts/get_packages.sh
+  - docker build -t willdockerhub/kubeansible:v$KUBE_VERSION .
   - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-  - docker push willdockerhub/kubeansible:v$kubernetes_verison  
+  - docker push willdockerhub/kubeansible:v$KUBE_VERSION

@@ -8,7 +8,6 @@ base_dir=${path}/packages
 docker_version=19.03.8
 kubernetes_version=1.17.0
 haproxy_version=alpine
-#etcd_version=3.4.3-0
 flannel_version=v0.11.0
 calico_version=v3.10.3
 ipcalc_version=0.41
@@ -22,7 +21,7 @@ function get_loadbalancer(){
 function get_kubernetes(){
   curl -LO https://storage.googleapis.com/kubernetes-release/release/v${kubernetes_version}/bin/linux/amd64/kubeadm
   chmod +x kubeadm
-  ./kubeadm config images pull
+  ./kubeadm config images pull --kubernetes-version ${kubernetes_version}
   docker save $(./kubeadm config images list --kubernetes-version ${kubernetes_version} | grep -v etcd) | bzip2 -z --best > ${base_dir}/images/k8s.tar.bz2
   docker save $(./kubeadm config images list --kubernetes-version ${kubernetes_version} | grep etcd) | bzip2 -z --best > ${base_dir}/images/etcd.tar.bz2
 }
@@ -70,10 +69,10 @@ function get_yum_repo(){
     createrepo /rpms"
 }
 
-#get_loadbalancer
+get_loadbalancer
 get_kubernetes
-#get_flannel
-#get_calico
-#get_yum_repo
-#get_cfssl_tool
-#get_ipcalc
+get_flannel
+get_calico
+get_yum_repo
+get_cfssl_tool
+get_ipcalc

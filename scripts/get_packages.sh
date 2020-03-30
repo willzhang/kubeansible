@@ -51,7 +51,7 @@ function get_yum_repo(){
   centos_version=('centos:7.5.1804' 'centos:7.6.1810' 'centos:7.7.1908')
   for version in ${centos_version[@]}
   do
-    docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${version} \
+    docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/scripts/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${version} \
     bash -c "
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
     yum install -y yum-utils &&
@@ -61,8 +61,6 @@ function get_yum_repo(){
     yum -y install --downloadonly --downloaddir=/rpms chrony ipvsadm ipset &&
     yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
   done
-  echo ${PWD}
-  ls
   docker run -t --rm -v ${PWD}/rpms:/rpms centos:7.7.1908 \
     bash -c "
     yum  install -y createrepo &&

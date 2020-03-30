@@ -5,7 +5,7 @@ RUN mkdir -p /data/kubeansible \
 
 COPY scripts/packages /data/packages
 
-COPY scripts/rpms /usr/share/nginx/html/rpms
+COPY rpms /usr/share/nginx/html/rpms
 COPY scripts/yum-repo/index.html /usr/share/nginx/html
 COPY scripts/yum-repo/nginx.conf /etc/nginx/conf.d/default.conf
 

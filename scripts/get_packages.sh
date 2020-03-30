@@ -20,7 +20,7 @@ function get_loadbalancer(){
 }
 
 function get_kubernetes(){
-  curl -LO https://storage.googleapis.com/kubernetes-release/release/${kubernetes_version}/bin/linux/amd64/kubeadm
+  curl -LO https://storage.googleapis.com/kubernetes-release/release/v${kubernetes_version}/bin/linux/amd64/kubeadm
   chmod +x kubeadm
   ./kubeadm config images pull
   docker save $(./kubeadm config images list | grep -v etcd) | bzip2 -z --best > ${base_dir}/images/k8s.tar.bz2
@@ -51,7 +51,7 @@ function get_ipcalc(){
 function get_yum_repo(){
   for centos_version in centos:7.5.1804 centos:7.6.1810 centos:7.7.1908
   do
-    docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${centos_version} \
+    docker run -t --rm -v ${path}/rpms:/rpms -v ${path}/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${centos_version} \
     bash -c "
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
     yum install -y yum-utils &&
@@ -61,8 +61,9 @@ function get_yum_repo(){
     yum -y install --downloadonly --downloaddir=/rpms chrony ipvsadm ipset &&
     yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
   done
-
-  docker run -t --rm -v ${PWD}/rpms:/rpms centos:7.7.1908 \
+  echo ${path}
+  ls
+  docker run -t --rm -v ${path}/rpms:/rpms centos:7.7.1908 \
     bash -c "
     yum  install -y createrepo &&
     createrepo /rpms"

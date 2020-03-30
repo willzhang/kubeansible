@@ -1,0 +1,7 @@
+- hosts:
+    - master
+    - node
+    - etcd
+  gather_facts: no
+  roles:
+    - upgrade

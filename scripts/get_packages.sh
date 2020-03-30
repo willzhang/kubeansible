@@ -57,7 +57,7 @@ function get_yum_repo(){
     yum install -y yum-utils &&
     yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&
     mkdir -p /rpms/ &&
-    yum -y install --downloadonly --downloaddir=/rpms docker-ce-${docker_version}.el7.x86_64 docker-ce-cli-${docker_version}.el7.x86_64 containerd.io &&
+    yum -y install --downloadonly --downloaddir=/rpms docker-ce-${docker_version} docker-ce-cli-${docker_version} containerd.io &&
     yum -y install --downloadonly --downloaddir=/rpms chrony ipvsadm ipset &&
     yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
   done

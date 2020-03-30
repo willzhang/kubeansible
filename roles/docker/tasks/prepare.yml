@@ -41,13 +41,6 @@
   when:
   - inventory_hostname != ansible_play_batch[0]
 
-- name: start chrony for Redhat/CentOS
-  systemd:
-    name: chronyd
-    daemon_reload: true
-    enabled: yes
-    state: restarted
-
 - name: get yum repo server ip
   shell:
     echo $SSH_CONNECTION | cut -d " " -f 1
@@ -58,6 +51,24 @@
     path: /etc/hosts
     block: '{{ ip.stdout }} kubeansible'
     marker: '# {mark} KUBEANSIBLE DEPLOY MANAGED BLOCK kubeansible'
+
+- name: yum install chrony and ipvsadm
+  yum:
+    disablerepo: '*'
+    enablerepo: kubeansible
+    update_cache: true
+    name:
+      - chrony
+      - ipvsadm
+      - ipset
+    state: present
+
+- name: start chrony for Redhat/CentOS
+  systemd:
+    name: chronyd
+    daemon_reload: true
+    enabled: yes
+    state: restarted
 
 - name: update /etc/hosts file
   become: true

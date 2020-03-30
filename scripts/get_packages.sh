@@ -54,17 +54,11 @@ function get_yum_repo(){
     docker run -t --rm -v ${PWD}/rpms:/rpms -v ${PWD}/scripts/yum-repo/kubernetes.repo:/etc/yum.repos.d/kubernetes.repo ${version} \
     bash -c "
     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
-    yum install -y yum-utils &&
-    yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo &&
-    mkdir -p /rpms/ &&
-    yum -y install --downloadonly --downloaddir=/rpms docker-ce-${docker_version} docker-ce-cli-${docker_version} containerd.io &&
-    yum -y install --downloadonly --downloaddir=/rpms chrony ipvsadm ipset &&
-    yum -y install --downloadonly --downloaddir=/rpms kubernetes-cni kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
+    curl -sSL https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/ &&
+    yumdownloader -y --resolve --destdir=/rpms/ docker-ce-${docker_version} chrony ipvsadm ipset &&
+    yumdownloader -y --resolve --destdir=/rpms/ kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version} &&
+    if version=${centos_version[-1]}; then yum install -y createrepo && createrepo /rpms"
   done
-  docker run -t --rm -v ${PWD}/rpms:/rpms centos:7.7.1908 \
-    bash -c "
-    yum  install -y createrepo &&
-    createrepo /rpms"
 }
 
 get_loadbalancer

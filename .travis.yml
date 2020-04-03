@@ -30,8 +30,8 @@ jobs:
     - stage: pull haproxy docker images
       script:
         - docker pull haproxy:${haproxy_version}
-	- docker save -o ${base_dir}/images/haproxy.tar haproxy:${haproxy_version}
-	- bzip2 -z --best ${base_dir}/images/haproxy.tar.bz2
+        - docker save -o ${base_dir}/images/haproxy.tar haproxy:${haproxy_version}
+        - bzip2 -z --best ${base_dir}/images/haproxy.tar.bz2
 		 
     - stage: pull kubernetes images
       script:
@@ -87,7 +87,7 @@ jobs:
               yumdownloader -y --resolve --destdir=/rpms/ kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version} &&
               if version=${centos_version[-1]}; then yum install -y createrepo && createrepo /rpms"
             done
-		
+	    
     - stage: build kubeansible image
       script:
         - docker build -t willdockerhub/kubeansible:$KUBE_VERSION .

@@ -2,7 +2,7 @@ language: shell
 os: linux
 
 services:
-  - docker
+- docker
 
 env:
  global:
@@ -17,13 +17,10 @@ before_install:
   - docker pull centos:7.5.1804
   - docker pull centos:7.6.1810
   - docker pull centos:7.7.1908
-
-#!/bin/bash
-
-path=$(dirname $(readlink -f $0 ))
-mkdir -p ${path}/packages/{bin,images,conf}
-base_dir=${path}/packages
-echo $base_dir
+  - path=$(dirname $(readlink -f $0 ))
+  - mkdir -p ${path}/packages/{bin,images,conf}
+  - base_dir=${path}/packages
+  - echo $base_dir
 
 jobs:
   include:

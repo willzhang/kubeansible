@@ -4,30 +4,17 @@ os: linux
 services:
 - docker
 
+before_install:
+- docker pull centos:7.5.1804
+- docker pull centos:7.6.1810
+- docker pull centos:7.7.1908
+
 env:
  global:
-   - docker_version=19.03.8
-   - kubernetes_version=1.17.4
-   - haproxy_version=alpine
-   - flannel_version=v0.11.0
-   - calico_version=v3.13.1
-   - ipcalc_version=0.41
-
-before_install:
-  - docker pull centos:7.5.1804
-  - docker pull centos:7.6.1810
-  - docker pull centos:7.7.1908
-
-jobs:
-  include:
-    - stage: pull haproxy docker images
-      script:
-        - docker pull haproxy:${haproxy_version}
-        - docker save -o haproxy.tar haproxy:${haproxy_version}
-        - bzip2 -z --best haproxy.tar
-
-    - stage: build kubeansible image
-      script:
-        - docker build -t willdockerhub/kubeansible:$kubernetes_version .
-        - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
-        - docker push willdockerhub/kubeansible:$kubernetes_version
+   - KUBE_VERSION=1.17.0
+ 
+script:
+  - bash scripts/get_packages.sh
+  - docker build -t willdockerhub/kubeansible:v$KUBE_VERSION .
+  - docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  - docker push willdockerhub/kubeansible:v$KUBE_VERSION

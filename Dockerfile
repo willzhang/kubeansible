@@ -6,7 +6,7 @@ RUN mkdir -p /data/kubeansible/ \
 
 COPY haproxy.tar.bz2 /data/kubeansible/packages/images
 
-#COPY rpms /usr/share/nginx/html/rpms
+COPY rpms /usr/share/nginx/html/rpms
 COPY yum-repo/index.html /usr/share/nginx/html
 COPY yum-repo/nginx.conf /etc/nginx/conf.d/default.conf
 

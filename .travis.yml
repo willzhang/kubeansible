@@ -24,7 +24,7 @@ jobs:
       script:
         - docker pull haproxy:${haproxy_version}
         - docker save -o haproxy.tar haproxy:${haproxy_version}
-        - bzip2 -z --best haproxy.tar.bz2
+        - bzip2 -z --best haproxy.tar
 
     - stage: build kubeansible image
       script:

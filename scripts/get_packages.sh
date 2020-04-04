@@ -83,7 +83,8 @@ function get_yum_repo(){
     "yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm &&
     curl -o /etc/yum.repos.d/docker-ce.repo https://download.docker.com/linux/centos/docker-ce.repo && 
     yumdownloader -y --resolve --destdir=/rpms/ docker-ce-${docker_version} chrony ipvsadm ipset &&
-    yumdownloader -y --resolve --destdir=/rpms/ kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version}"
+    yumdownloader -y --resolve --destdir=/rpms/ kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version} &&
+    if version=${centos_version[-1]}; then yum install -y createrepo && createrepo /rpms"
   done
 }
 

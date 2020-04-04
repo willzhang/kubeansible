@@ -1,6 +1,6 @@
 #!/bin/bash
 
-path=`dirname 0`
+path=$(dirname $(readlink -f $0 ))
 mkdir -p ${path}/packages/{bin,images,conf}
 base_dir=${path}/packages
 echo $base_dir
@@ -45,7 +45,7 @@ function get_calico(){
   curl -o ${base_dir}/conf/calico.yaml https://docs.projectcalico.org/${calico_version}/manifests/calico.yaml
   calico_images=$(cat ${base_dir}/conf/calico.yaml | grep "image:" | awk '{print $2}')
   echo $calico_images |xargs -I {} docker pull {}
-  docker save -o ${base_dir}/images/calico.tar $calico_images
+  docker save -o ${base_dir}/images/calico.tar $calico_images 
   bzip2 -z --best ${base_dir}/images/calico.tar
 }
 
@@ -70,7 +70,7 @@ function get_yum_repo(){
     curl -sSL https://download.docker.com/linux/centos/docker-ce.repo -o /etc/yum.repos.d/ &&
     yumdownloader -y --resolve --destdir=/rpms/ docker-ce-${docker_version} chrony ipvsadm ipset &&
     yumdownloader -y --resolve --destdir=/rpms/ kubectl-${kubernetes_version} kubelet-${kubernetes_version} kubeadm-${kubernetes_version} &&
-    if version=${centos_version[-1]}; then yum install -y createrepo; createrepo ${PWD}/rpms"
+    if version=${centos_version[-1]}; then yum install -y createrepo && createrepo ${PWD}/rpms"
   done
 }
 
